@@ -30,16 +30,6 @@ const Signup = () => {
         }
     }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setLoading(true)
-        // Simulate a network request
-        setTimeout(() => {
-            setLoading(false)
-            alert('Sign up successful!')
-        }, 2000)
-    }
-
   return (
     <section>
         <form className='max-w-md m-auto pt-24' onSubmit={handleSignup}>
