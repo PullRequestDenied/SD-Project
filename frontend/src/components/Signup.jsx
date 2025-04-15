@@ -8,7 +8,7 @@ const Signup = () => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    const {session} = UserAuth();
+    const {session, signUpNewUser} = UserAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault()
