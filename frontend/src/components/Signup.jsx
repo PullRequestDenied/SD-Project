@@ -1,11 +1,14 @@
 import React, {useState} from 'react'
 import { Link } from 'react-router-dom'
+import { UserAuth } from '../context/AuthContext'
 
 const Signup = () => {
     const [loading, setLoading] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+
+    const {session} = UserAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault()
