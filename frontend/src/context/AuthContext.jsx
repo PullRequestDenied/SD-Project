@@ -43,14 +43,17 @@ export const AuthContextProvider = ({ children }) => {
 
     //Get Session
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const fetchSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
-        });
+        };
+
+        fetchSession();
 
         supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
         });
-    },[]);
+    }, []);
 
     //SignOut
     const signOut = async () => {
