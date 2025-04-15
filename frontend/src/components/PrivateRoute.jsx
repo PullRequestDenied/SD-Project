@@ -3,9 +3,8 @@ import { UserAuth } from '../context/AuthContext'
 import { Navigate } from 'react-router-dom';
 
 const PrivateRoute = ({children}) => {
-    const {session} = UserAuth();
-    console.log(session)
-
+    const {session,loading} = UserAuth();
+  if (loading) return <div>Loading</div>;
   return (<>{session ? <>{children}</> : <Navigate to="/signin"/>}</>)
 }
 
