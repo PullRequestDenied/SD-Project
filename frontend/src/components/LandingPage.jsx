@@ -64,12 +64,17 @@ export default function LandingPage() {
             )}
           </button>
 
+          <Link to="/signup" className="w-full block">
           <button className="w-full text-sm bg-emerald-400 hover:bg-emerald-500 dark:bg-emerald-300 dark:hover:bg-emerald-400 py-2 rounded-md transition text-white dark:text-white">
             {sidebarOpen ? 'Sign Up' : '✍️'}
           </button>
+          </Link>
+
+          <Link to="/signin" className="w-full block">
           <button className="w-full text-sm bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-300 dark:hover:bg-cyan-400 py-2 rounded-md transition text-white dark:text-white">
             {sidebarOpen ? 'Log in' : '🔑'}
           </button>
+          </Link>
         </footer>
       </aside>
 
