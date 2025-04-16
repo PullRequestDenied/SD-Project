@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Menu, Moon, Sun, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BlurText from '../assets/BlurText';
+import ShinyText from '../assets/ShinyText';
+
 
 export default function LandingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -81,9 +84,14 @@ export default function LandingPage() {
       {/* Main content */}
       <section className="flex flex-1 items-center justify-center p-4">
         <article className="w-full max-w-xl text-center">
-          <h1 className="text-xl md:text-2xl font-semibold mb-6">
-            What would you like to explore?
-          </h1>
+        <BlurText
+          text="What would you like to explore?"
+          delay={70}
+          animateBy="words"
+          direction="top"
+          // onAnimationComplete={handleAnimationComplete}
+          className="text-4xl mb-8"
+        />
 
           <form
             className={`flex items-center rounded-full overflow-hidden px-2 py-1 shadow-lg transition-colors ${
@@ -95,13 +103,10 @@ export default function LandingPage() {
               placeholder="Search constitutional documents..."
               className="flex-grow bg-transparent px-4 py-2 focus:outline-none placeholder-gray-400 text-inherit"
             />
-            <button
-              type="submit"
-              className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-full text-white transition"
-            >
-              <Search className="w-4 h-4 mr-1" />
-              Search
+            <button>
+              <ShinyText text="search!" disabled={false} speed={2} className='custom-class' /> 
             </button>
+
           </form>
         </article>
       </section>
