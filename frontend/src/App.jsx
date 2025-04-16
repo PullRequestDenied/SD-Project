@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { UserAuth } from './context/AuthContext'
+import LandingPage from './components/LandingPage';
 
 function App() {
   const {session} = UserAuth();
   console.log(session)
 
   return (
-    <>
-      <p>Landing Page</p>
-    </>
+    <LandingPage />
   )
 }
 
