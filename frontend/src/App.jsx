@@ -6,9 +6,10 @@ function App() {
   console.log(session)
 
   return (
-    <>
+    <div>
       <p>Landing Page</p>
-    </>
+
+    </div>
   )
 }
 
