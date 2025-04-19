@@ -2,31 +2,46 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { UserAuth } from "../context/AuthContext";
 
+/*NOTE a breadcumb is something like this: root > parent > child
+
+
+
+
+
+*/
+//helper function to build the folder path i.e root/parent/child
+const buildFullPathFromFolderId = (folderId, folders) => {
+  let path = [];
+  let current = folders.find(f => f.id === folderId);
+  while (current) {
+    path.unshift(current.name);
+    current = folders.find(f => f.id === current.parent_id);
+  }
+  return path.join("/");
+};
+
 function FileManager() {
-  // -- Auth Session --
   const { session } = UserAuth();
   const userId = session?.user?.id;
-
-  // -- State: folder & file handling --
-  const [folders, setFolders] = useState([]); // All folders from DB
-  const [files, setFiles] = useState([]); // Files for the current folder
-  const [currentFolderId, setCurrentFolderId] = useState(null); // Navigation (null = root)
-
-  // -- State: creation & upload --
+  //variables used to fetch folders files mnage breadcrumb etc
+  const [folders, setFolders] = useState([]);
+  const [files, setFiles] = useState([]);
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [breadcrumbTrail, setBreadcrumbTrail] = useState([]);
   const [folderName, setFolderName] = useState("");
-  const [parentId, setParentId] = useState(null); // For folder creation dropdown
-  const [file, setFile] = useState(null); // Selected file
-  const [message, setMessage] = useState(""); // Feedback
+  const [parentId, setParentId] = useState(null);
+  const [file, setFile] = useState(null);
+  const [message, setMessage] = useState("");
 
-  // ✅ Fetch folders and files whenever session or current folder changes
+  //when the page loads or the current folder changes, fetch the folders and files from the database
   useEffect(() => {
     if (!session) return;
 
     const fetchData = async () => {
-      // Get all folders
       const { data: folderData, error: folderError } = await supabase
         .from("folders")
         .select("id, name, parent_id")
+
 
       if (folderError) {
         console.error("Folder fetch error:", folderError.message);
@@ -34,42 +49,64 @@ function FileManager() {
         setFolders(folderData);
       }
 
-      // Get files inside the selected folder
       const { data: fileData, error: fileError } = await supabase
         .from("files")
-        .select("id, filename")
-        .eq("folder_id", currentFolderId || null);
+        .select("id, filename, folder_id")
 
       if (fileError) {
         console.error("File fetch error:", fileError.message);
       } else {
-        setFiles(fileData);
+        //filter out .keep files because superbase doesn't allow creation of empty folders
+        setFiles(fileData.filter(f => !f.filename.endsWith(".keep")));
       }
     };
 
     fetchData();
   }, [session, currentFolderId]);
 
-  // ✅ Create new folder (nested or top-level)
+  const buildFullPath = () => {
+    return buildFullPathFromFolderId(currentFolderId, folders);
+  };
+  //when a user clicks a folder,it sets it as the current folder and builds the path
+  const handleFolderClick = (folderId) => {
+    const newTrail = [];
+    let current = folders.find(f => f.id === folderId);
+    while (current) {
+      newTrail.unshift(current);
+      current = folders.find(f => f.id === current.parent_id);
+    }
+    setBreadcrumbTrail(newTrail);
+    setCurrentFolderId(folderId);
+    setParentId(folderId);
+  };
+  //allows a user to navigate back in the breadcumb trail
+  const handleBreadcrumbClick = (index) => {
+    const newTrail = breadcrumbTrail.slice(0, index + 1);
+    const lastFolder = newTrail[newTrail.length - 1];
+    setCurrentFolderId(lastFolder?.id || null);
+    setParentId(lastFolder?.id || null);
+    setBreadcrumbTrail(newTrail);
+  };
+  //as it says,for folder creation
   const handleCreateFolder = async () => {
     if (!folderName || !userId) {
       setMessage("❌ Please enter a folder name.");
       return;
     }
-
-    const parentName = folders.find(f => f.id === parentId)?.name || "";
-    const folderPath = parentName ? `${parentName}/${folderName}/.keep` : `${folderName}/.keep`;
+    //builds path and adds .keep so the folder is created in archive
+    const fullPath = buildFullPath();
+    const folderPath = fullPath ? `${fullPath}/${folderName}/.keep` : `${folderName}/.keep`;
 
     const { error: uploadError } = await supabase.storage
       .from("archive")
       .upload(folderPath, new Blob([""], { type: "text/plain" }));
-
+    //for preventing duplication ,added on my own not sure if it is needed
     if (uploadError && uploadError.message !== "The resource already exists") {
       console.error("Storage error:", uploadError.message);
       setMessage("❌ Failed to create folder in storage.");
       return;
     }
-
+    //insert folder details into database
     const { error: dbError } = await supabase.from("folders").insert({
       name: folderName,
       created_by: userId,
@@ -83,19 +120,17 @@ function FileManager() {
     }
 
     setFolderName("");
-    setParentId(null);
     setMessage(`✅ Folder '${folderName}' created!`);
   };
-
-  // ✅ Upload a file to the current folder
+  //time for uploading files
   const handleUpload = async () => {
     if (!file || !userId) {
       setMessage("❌ Please select a file to upload.");
       return;
     }
-
-    const folderName = folders.find(f => f.id === currentFolderId)?.name || "top-level";
-    const filePath = `${folderName}/${file.name}`;
+    //getting path and uploading to archive
+    const fullPath = buildFullPath();
+    const filePath = fullPath ? `${fullPath}/${file.name}` : `${file.name}`;
 
     const { error: uploadError } = await supabase.storage
       .from("archive")
@@ -106,7 +141,7 @@ function FileManager() {
       setMessage(`❌ Upload failed: ${uploadError.message}`);
       return;
     }
-
+    //insert file details into datbase
     const { error: dbError } = await supabase.from("files").insert({
       filename: file.name,
       path: filePath,
@@ -126,85 +161,102 @@ function FileManager() {
     setFile(null);
     setMessage("✅ File uploaded successfully!");
   };
-
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">📁 File Manager</h2>
-
-      {/* ✅ Back button for navigating up the folder tree */}
-      {currentFolderId && (
-        <button
-          onClick={() => setCurrentFolderId(folders.find(f => f.id === currentFolderId)?.parent_id || null)}
-          className="px-3 py-1 bg-stone-700 text-white rounded"
+  //Used to render folders,sorry frontend people if its confusing,I put it here because the return was looking too long(it is still long :( )
+  const renderFolderTree = (parentId = null, depth = 0) => {
+    return folders
+      .filter(f => f.parent_id === parentId)
+      .map(folder => (
+        <div
+          key={folder.id}
+          className="border-l-2 border-stone-600 pl-3 ml-1 mb-2"
+          style={{ marginLeft: depth * 10 }}
         >
-          🔙 Back
-        </button>
-      )}
+          <div
+            className="cursor-pointer text-blue-400 hover:underline font-medium"
+            onClick={() => handleFolderClick(folder.id)}
+          >
+            📁 {folder.name}
+          </div>
+          <div className="ml-4">
+            {files
+              .filter(file => file.folder_id === folder.id)
+              .map(file => (
+                <div key={file.id} className="text-white ml-2">📄 {file.filename}</div>
+              ))}
+          </div>
+          {renderFolderTree(folder.id, depth + 1)}
+        </div>
+      ));
+  };
+//normal stuff without semantic tags,sorry,there is some flex so somewhat confusing
+//its not perfect yet,to go back to root you have to click the breadcrumb trail.
+  return (
+    <div className="p-6 max-w-4xl mx-auto bg-gray-400 shadow-lg rounded-lg text-gray-800 space-y-6">
+      <h2 className="text-3xl font-bold border-b pb-2 mb-4">📁 File Manager</h2>
 
-      {/* ✅ Folder creation section */}
-      <div>
+      <div className="text-sm text-blue-600 space-x-1 flex flex-wrap items-center">
+        <span
+          className="cursor-pointer hover:underline"
+          onClick={() => {
+            setCurrentFolderId(null);
+            setBreadcrumbTrail([]);
+            setParentId(null);
+          }}
+        >
+          Root
+        </span>
+        {breadcrumbTrail.map((folder, index) => (
+          <span key={folder.id}>
+            {' > '}
+            <span
+              className="cursor-pointer hover:underline"
+              onClick={() => handleBreadcrumbClick(index)}
+            >
+              {folder.name}
+            </span>
+          </span>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
         <input
           type="text"
           placeholder="Folder name"
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
-          className="p-2 bg-stone-800 text-white rounded-md mr-2"
+          className="p-2 border rounded w-full"
         />
-
-        <select
-          value={parentId || ""}
-          onChange={(e) => setParentId(e.target.value || null)}
-          className="p-2 bg-stone-700 text-white rounded-md"
+        <button
+          onClick={handleCreateFolder}
+          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 text-white rounded shadow"
         >
-          <option value="">Top-level folder</option>
-          {folders.map((f) => (
-            <option key={f.id} value={f.id}>{f.name}</option>
-          ))}
-        </select>
-
-        <button onClick={handleCreateFolder} className="ml-2 bg-blue-600 px-4 py-2 text-white rounded">
-          Create Folder
+          ➕ Create Folder
         </button>
       </div>
 
-      {/* ✅ Folder navigation view */}
-      <ul>
-        {folders.filter(f => f.parent_id === currentFolderId).map((folder) => (
-          <li
-            key={folder.id}
-            className="cursor-pointer text-blue-400 hover:underline"
-            onClick={() => setCurrentFolderId(folder.id)}
-          >
-            📁 {folder.name}
-          </li>
-        ))}
-      </ul>
+      <div className="bg-gray-100 p-4 rounded border border-gray-300">
+        {renderFolderTree()}
+      </div>
 
-      {/* ✅ File upload section */}
-      <div className="pt-4">
+      <div className="flex items-center gap-3">
         <input
           type="file"
           onChange={(e) => setFile(e.target.files[0])}
-          className="mb-2"
+          className="file-input file-input-bordered"
         />
         <button
           onClick={handleUpload}
-          className="bg-green-600 px-4 py-2 text-white rounded"
+          className="bg-green-600 hover:bg-green-700 px-4 py-2 text-white rounded shadow"
         >
-          Upload File
+          ⬆️ Upload File
         </button>
       </div>
 
-      {/* ✅ List of files in the current folder */}
-      <ul>
-        {files.length > 0 && <li className="font-bold pt-4">📄 Files:</li>}
-        {files.map((file) => (
-          <li key={file.id}>📄 {file.filename}</li>
-        ))}
-      </ul>
-
-      {/* ✅ Status message */}
-      {message && <p className="pt-4">{message}</p>}
+      {message && (
+        <div className="bg-yellow-100 text-yellow-800 border border-yellow-300 rounded px-4 py-2">
+          {message}
+        </div>
+      )}
     </div>
   );
 }

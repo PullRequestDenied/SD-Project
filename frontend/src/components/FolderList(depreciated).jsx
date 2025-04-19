@@ -11,7 +11,7 @@ function FolderList() {
     if (!session) return;
   
     const fetchData = async () => {
-      // Fetch folders
+s
       const { data: folderData, error: folderError } = await supabase
         .from("folders")
         .select("id, name, parent_id")
@@ -23,11 +23,11 @@ function FolderList() {
         setFolders(folderData);
       }
   
-      // Fetch files in current folder
+
       const { data: fileData, error: fileError } = await supabase
         .from("files")
         .select("id, filename")
-        .eq("folder_id", currentFolderId || null); // top-level if null
+        .eq("folder_id", currentFolderId || null);
   
       if (fileError) {
         console.error("Error fetching files:", fileError.message);

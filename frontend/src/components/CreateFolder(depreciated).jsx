@@ -20,8 +20,7 @@ function CreateFolder() {
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [files, setFiles] = useState([]);
 
-  // ✅ FETCH FOLDERS FROM DATABASE (for dropdown selection)
-  // We do this once when the component loads and session is ready
+
   useEffect(() => {
     if (!session) return;
 
@@ -53,8 +52,6 @@ function CreateFolder() {
     fetchFolders();
   }, [session,currentFolderId]);
 
-  // ✅ HANDLE FOLDER CREATION
-  // When user clicks "Create Folder" this runs
   const handleCreateFolder = async () => {
     if (!folderName || !session) {
       setMessage("Please enter a folder name.");
@@ -63,8 +60,7 @@ function CreateFolder() {
 
     const userId = session.user.id;
 
-    // ✅ Optional: Simulate folder in storage by uploading a .keep file
-    // If parent folder exists, nest the new folder inside it
+
     const parentName = folders.find((f) => f.id === parentId)?.name || null;
     console.log(parentId);
     const storagePath = parentName
@@ -83,8 +79,6 @@ function CreateFolder() {
     console.log(folderName);
     console.log(userId);
     console.log(parentId);
-
-    // ✅ INSERT INTO DATABASE: add folder entry with optional parent_id
     const { error: dbError } = await supabase.from("folders").insert({
       name: folderName,
       created_by: userId,
@@ -113,7 +107,7 @@ function CreateFolder() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">📁 Create Folder</h2>
 
-      {/* Input: Folder name */}
+
       <input
         className="p-2 mb-2 bg-stone-800 text-white rounded-md block"
         type="text"
@@ -122,7 +116,6 @@ function CreateFolder() {
         onChange={(e) => setFolderName(e.target.value)}
       />
 
-      {/* Dropdown: Select parent folder */}
       <label className="block mb-1">Parent folder (optional):</label>
       <select
         value={parentId || ""}
@@ -139,7 +132,7 @@ function CreateFolder() {
         ))}
       </select>
 
-      {/* Create Button */}
+
       <button
         className="bg-blue-600 text-white px-4 py-2 rounded-md"
         onClick={handleCreateFolder}
@@ -147,10 +140,9 @@ function CreateFolder() {
         Create Folder
       </button>
 
-      {/* Message Feedback */}
       {message && <p>{message}</p>}
 
-      {/* (Optional) Preview of folders */}
+
       <div>
       {currentFolderId && (
   <button
