@@ -2,6 +2,9 @@ import React from 'react'
 import { UserAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { Link } from "react-router-dom";
+import CreateFolder from './CreateFolder';
+import FolderList from './FolderList';
+import FileManager from './FileManager';
 
 
 const Dashboard = () => {
@@ -27,7 +30,9 @@ const Dashboard = () => {
       </div>
       <div>
         <h1>Admin Dashboard</h1>
-        <Link to="/upload-test">Test File Upload</Link>
+        {/* <Link to="/upload-test">Test File Upload</Link>
+        <CreateFolder></CreateFolder> */}
+        <FileManager></FileManager>
       </div>
     </div>
     
