@@ -3,6 +3,8 @@ import { Menu, Moon, Sun, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BlurText from '../assets/BlurText';
 import ShinyText from '../assets/ShinyText';
+import Aurora from '../assets/Aurora';
+import Particles from '../assets/Particals';
 
 
 export default function LandingPage() {
@@ -10,10 +12,38 @@ export default function LandingPage() {
   const [darkMode, setDarkMode] = useState(true);
 
   return (
+
+    
     <main className={`flex h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      {/* <section className="absolute inset-0 z-0">
+        <Aurora
+          colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+          // colorStops={["#00D8FF", "#7CFF67", "#00D8FF"]}
+          blend={0.5}
+          amplitude={1.0}
+          speed={0.5}
+        />
+      </section> */}
+
+
+<section className="absolute inset-0 z-0">
+  <Particles
+    particleColors={['#ffffff', '#000000']}
+    particleCount={750}
+    particleSpread={12}
+    speed={0.1}
+    particleBaseSize={100}
+    moveParticlesOnHover={false}
+    alphaParticles={false}
+    disableRotation={false}
+  />
+</section>
+
+      
+      
       {/* Sidebar */}
       <aside
-        className={`transition-all duration-300 ease-in-out flex flex-col justify-between px-4 py-6 shadow-md ${
+        className={`fixed z-20 transition-all duration-300 ease-in-out flex flex-col justify-between h-full px-4 py-6 shadow-md ${
           sidebarOpen ? 'w-64' : 'w-28'
         } ${darkMode ? 'bg-gray-800' : 'bg-white border-r border-gray-200'}`}
       >
@@ -78,11 +108,25 @@ export default function LandingPage() {
             {sidebarOpen ? 'Log in' : '🔑'}
           </button>
           </Link>
+
+          {sidebarOpen && (
+          <button className="w-full text-sm bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-300 dark:hover:bg-cyan-400 py-2 rounded-md transition text-white dark:text-white">
+            Privacy policy
+          </button>
+        )}
+
+        {sidebarOpen && (
+          <button className="w-full text-sm bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-300 dark:hover:bg-cyan-400 py-2 rounded-md transition text-white dark:text-white">
+            Contact us
+          </button>
+        )}
+
+
         </footer>
       </aside>
 
       {/* Main content */}
-      <section className="flex flex-1 items-center justify-center p-4">
+      <section className="relative z-10 flex flex-1 items-center justify-center p-4 ml-64">
         <article className="w-full max-w-xl text-center">
         <BlurText
           text="What would you like to explore?"
