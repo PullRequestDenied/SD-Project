@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { UserAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useDarkMode } from '../context/DarkModeContext'
+import { ArrowLeft } from 'lucide-react';
 
 
 
@@ -39,6 +40,15 @@ const Signin = () => {
             darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
           }`}
         >
+        <Link to="/"
+            className="absolute top-6 left-6 group flex items-center space-x-1"
+        >
+        <ArrowLeft className="w-5 h-5 text-indigo-500 group-hover:text-indigo-600 transition" />
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-sm text-indigo-500">
+                Back to Home
+            </span>
+        </Link>
+
           <section
             className={`relative z-10 w-full max-w-md px-6 py-12 shadow-lg rounded-2xl transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
               darkMode
