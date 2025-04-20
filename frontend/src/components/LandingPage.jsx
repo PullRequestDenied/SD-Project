@@ -48,7 +48,7 @@ export default function LandingPage() {
       
       {/* Sidebar */}
       <aside
-        className={`fixed z-20 transition-all duration-300 ease-in-out flex flex-col justify-between h-full px-4 py-6 shadow-md ${
+        className={`fixed z-10 transition-all duration-300 ease-in-out flex flex-col justify-between h-full px-4 py-6 shadow-md ${
           sidebarOpen ? 'w-64' : 'w-28'
         } ${darkMode ? 'bg-gray-800' : 'bg-white border-r border-gray-200'}`}
       >
@@ -87,20 +87,7 @@ export default function LandingPage() {
         </nav>
 
         <footer className="space-y-2">
-          {/* Theme Toggle Button */}
-          <button 
-          onClick={toggleDarkMode}  
-            className="w-full flex items-center justify-center text-sm hover:border-pink-500 dark:hover:border-indigo-500 py-2 rounded-md transition text-white dark:text-white "
-          >
-            {sidebarOpen ? (
-              <>
-                {darkMode ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
-                {darkMode ? 'Light Mode' : 'Dark Mode'}
-              </>
-            ) : (
-              darkMode ? <Sun /> : <Moon />
-            )}
-          </button>
+
 
           <Link to="/signup" className="w-full block">
           <button className="w-full text-sm  hover:!border-cyan-600  py-2 rounded-md transition text-white dark:text-white">
@@ -128,6 +115,20 @@ export default function LandingPage() {
         )}
         </Link>
 
+          {/* Theme Toggle Button */}
+          <button 
+          onClick={toggleDarkMode}  
+            className="w-full flex items-center justify-center text-sm hover:border-pink-500 dark:hover:border-indigo-500 py-2 rounded-md transition text-white dark:text-white "
+          >
+            {sidebarOpen ? (
+              <>
+                {darkMode ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                {darkMode ? 'Light Mode' : 'Dark Mode'}
+              </>
+            ) : (
+              darkMode ? <Sun /> : <Moon />
+            )}
+          </button>
 
         </footer>
       </aside>
