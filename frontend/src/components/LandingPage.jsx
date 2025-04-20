@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, Moon, Sun, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BlurText from '../assets/BlurText';
 import ShinyText from '../assets/ShinyText';
-import Aurora from '../assets/Aurora';
 import Particles from '../assets/Particals';
+import { useDarkMode } from '../context/DarkModeContext';
+
 
 
 export default function LandingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
+  const { darkMode, toggleDarkMode } = useDarkMode();
+  console.log('LandingPage darkMode:', darkMode);
+  useEffect(() => {
+    console.log("LANDING PAGE sees darkMode:", darkMode);
+  }, [darkMode]);
 
   return (
 
@@ -67,13 +72,13 @@ export default function LandingPage() {
           <ul className="space-y-2">
             <li>
               {/* <a href="#" className="flex flex-col items-center justify-center p-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700"> */}
-              <a href="#" className="flex items-center justify-center p-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700">
+              <a href="#" className="flex items-center justify-center p-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">
               <span className="text-lg">🏛</span>
                 {sidebarOpen ? <span className={`ml-3 text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Home</span> : null}
               </a>
             </li>
             <li>
-            <a href="#" className="flex items-center justify-center p-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700">
+            <a href="#" className="flex items-center justify-center p-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">
                 <span>{'📚'}</span>
                 {sidebarOpen ? <span className={`ml-3 text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Library</span> : null}
               </a>
@@ -83,9 +88,9 @@ export default function LandingPage() {
 
         <footer className="space-y-2">
           {/* Theme Toggle Button */}
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="w-full flex items-center justify-center text-sm bg-indigo-400 hover:bg-indigo-500 dark:bg-indigo-300 dark:hover:bg-indigo-400 py-2 rounded-md transition text-white dark:text-white"
+          <button 
+          onClick={toggleDarkMode}  
+            className="w-full flex items-center justify-center text-sm hover:border-pink-500 dark:hover:border-indigo-500 py-2 rounded-md transition text-white dark:text-white "
           >
             {sidebarOpen ? (
               <>
@@ -98,28 +103,30 @@ export default function LandingPage() {
           </button>
 
           <Link to="/signup" className="w-full block">
-          <button className="w-full text-sm bg-emerald-400 hover:bg-emerald-500 dark:bg-emerald-300 dark:hover:bg-emerald-400 py-2 rounded-md transition text-white dark:text-white">
+          <button className="w-full text-sm  hover:!border-cyan-600  py-2 rounded-md transition text-white dark:text-white">
             {sidebarOpen ? 'Sign Up' : '✍️'}
           </button>
           </Link>
 
           <Link to="/signin" className="w-full block">
-          <button className="w-full text-sm bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-300 dark:hover:bg-cyan-400 py-2 rounded-md transition text-white dark:text-white">
+          <button className="w-full text-sm  hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
             {sidebarOpen ? 'Log in' : '🔑'}
           </button>
           </Link>
 
           {sidebarOpen && (
-          <button className="w-full text-sm bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-300 dark:hover:bg-cyan-400 py-2 rounded-md transition text-white dark:text-white">
+          <button className="w-full text-sm py-2 rounded-md transition text-white dark:text-white">
             Privacy policy
           </button>
         )}
-
+        <Link to="/contact" className="w-full block">
         {sidebarOpen && (
-          <button className="w-full text-sm bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-300 dark:hover:bg-cyan-400 py-2 rounded-md transition text-white dark:text-white">
+          <button className="w-full text-sm  py-2 rounded-md transition text-white dark:text-white">
             Contact us
           </button>
+          
         )}
+        </Link>
 
 
         </footer>
