@@ -100,12 +100,14 @@ export default function LandingPage() {
             {sidebarOpen ? 'Log in' : '🔑'}
           </button>
           </Link>
-
+          <Link to="/privacypolicy" className="w-full block">
           {sidebarOpen && (
           <button className="w-full text-sm py-2 rounded-md transition text-white dark:text-white">
             Privacy policy
           </button>
         )}
+        </Link>
+
         <Link to="/contact" className="w-full block">
         {sidebarOpen && (
           <button className="w-full text-sm  py-2 rounded-md transition text-white dark:text-white">
