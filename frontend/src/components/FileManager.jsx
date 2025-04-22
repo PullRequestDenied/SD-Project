@@ -168,7 +168,7 @@ function FileManager() {
       .map(folder => (
         <div
           key={folder.id}
-          className="border-l-2 border-stone-600 pl-3 ml-1 mb-2"
+          className="border-l-2 border-gray-600 pl-3 ml-1 mb-2"
           style={{ marginLeft: depth * 10 }}
         >
           <div
@@ -181,7 +181,7 @@ function FileManager() {
             {files
               .filter(file => file.folder_id === folder.id)
               .map(file => (
-                <div key={file.id} className="text-white ml-2">📄 {file.filename}</div>
+                <div key={file.id} className="text-gray-300 ml-2">📄 {file.filename}</div>
               ))}
           </div>
           {renderFolderTree(folder.id, depth + 1)}
@@ -191,10 +191,10 @@ function FileManager() {
 //normal stuff without semantic tags,sorry,there is some flex so somewhat confusing
 //its not perfect yet,to go back to root you have to click the breadcrumb trail.
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-gray-400 shadow-lg rounded-lg text-gray-800 space-y-6">
-      <h2 className="text-3xl font-bold border-b pb-2 mb-4">📁 File Manager</h2>
+    <div className="p-6 max-w-4xl mx-auto bg-gray-800 shadow-lg rounded-lg text-white space-y-6">
+      <h2 className="text-3xl font-bold border-b border-gray-700 pb-2 mb-4">📁 File Manager</h2>
 
-      <div className="text-sm text-blue-600 space-x-1 flex flex-wrap items-center">
+      <div className="text-sm text-blue-400 space-x-1 flex flex-wrap items-center">
         <span
           className="cursor-pointer hover:underline"
           onClick={() => {
@@ -224,36 +224,37 @@ function FileManager() {
           placeholder="Folder name"
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
-          className="p-2 border rounded w-full"
+          className="p-2 border border-gray-600 bg-gray-700 text-white rounded w-full"
         />
         <button
           onClick={handleCreateFolder}
-          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 text-white rounded shadow"
+          className="bg-blue-700 hover:bg-blue-600 px-4 py-2 text-white rounded shadow"
         >
           ➕ Create Folder
         </button>
       </div>
 
-      <div className="bg-gray-100 p-4 rounded border border-gray-300">
+      <div className="bg-gray-700 p-4 rounded border border-gray-600">
         {renderFolderTree()}
       </div>
 
       <div className="flex items-center gap-3">
         <input
+          data-testid="file-input"
           type="file"
           onChange={(e) => setFile(e.target.files[0])}
-          className="file-input file-input-bordered"
+          className="text-white file-input file-input-bordered bg-gray-700 border-gray-600"
         />
         <button
           onClick={handleUpload}
-          className="bg-green-600 hover:bg-green-700 px-4 py-2 text-white rounded shadow"
+          className="bg-green-700 hover:bg-green-600 px-4 py-2 text-white rounded shadow"
         >
           ⬆️ Upload File
         </button>
       </div>
 
       {message && (
-        <div className="bg-yellow-100 text-yellow-800 border border-yellow-300 rounded px-4 py-2">
+        <div className="bg-yellow-900 text-yellow-300 border border-yellow-700 rounded px-4 py-2">
           {message}
         </div>
       )}
