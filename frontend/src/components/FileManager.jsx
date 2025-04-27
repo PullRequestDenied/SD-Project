@@ -2,14 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { UserAuth } from "../context/AuthContext";
 
-/*NOTE a breadcumb is something like this: root > parent > child
-
-
-
-
-
-*/
-//helper function to build the folder path i.e root/parent/child
+// Helper to build folder path
 const buildFullPathFromFolderId = (folderId, folders) => {
   let path = [];
   let current = folders.find(f => f.id === folderId);
@@ -23,7 +16,7 @@ const buildFullPathFromFolderId = (folderId, folders) => {
 function FileManager() {
   const { session } = UserAuth();
   const userId = session?.user?.id;
-  //variables used to fetch folders files mnage breadcrumb etc
+
   const [folders, setFolders] = useState([]);
   const [files, setFiles] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState(null);
@@ -32,16 +25,16 @@ function FileManager() {
   const [parentId, setParentId] = useState(null);
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
+  const [expandedFolders, setExpandedFolders] = useState({});
+  const [selectedUploadFolderId, setSelectedUploadFolderId] = useState(null);
 
-  //when the page loads or the current folder changes, fetch the folders and files from the database
   useEffect(() => {
     if (!session) return;
 
     const fetchData = async () => {
       const { data: folderData, error: folderError } = await supabase
         .from("folders")
-        .select("id, name, parent_id")
-
+        .select("id, name, parent_id");
 
       if (folderError) {
         console.error("Folder fetch error:", folderError.message);
@@ -51,12 +44,11 @@ function FileManager() {
 
       const { data: fileData, error: fileError } = await supabase
         .from("files")
-        .select("id, filename, folder_id")
+        .select("id, filename, folder_id");
 
       if (fileError) {
         console.error("File fetch error:", fileError.message);
       } else {
-        //filter out .keep files because superbase doesn't allow creation of empty folders
         setFiles(fileData.filter(f => !f.filename.endsWith(".keep")));
       }
     };
@@ -67,7 +59,7 @@ function FileManager() {
   const buildFullPath = () => {
     return buildFullPathFromFolderId(currentFolderId, folders);
   };
-  //when a user clicks a folder,it sets it as the current folder and builds the path
+
   const handleFolderClick = (folderId) => {
     const newTrail = [];
     let current = folders.find(f => f.id === folderId);
@@ -79,7 +71,7 @@ function FileManager() {
     setCurrentFolderId(folderId);
     setParentId(folderId);
   };
-  //allows a user to navigate back in the breadcumb trail
+
   const handleBreadcrumbClick = (index) => {
     const newTrail = breadcrumbTrail.slice(0, index + 1);
     const lastFolder = newTrail[newTrail.length - 1];
@@ -87,26 +79,25 @@ function FileManager() {
     setParentId(lastFolder?.id || null);
     setBreadcrumbTrail(newTrail);
   };
-  //as it says,for folder creation
+
   const handleCreateFolder = async () => {
     if (!folderName || !userId) {
       setMessage("❌ Please enter a folder name.");
       return;
     }
-    //builds path and adds .keep so the folder is created in archive
-    const fullPath = buildFullPath();
+    const fullPath = buildFullPathFromFolderId(parentId, folders);
     const folderPath = fullPath ? `${fullPath}/${folderName}/.keep` : `${folderName}/.keep`;
 
     const { error: uploadError } = await supabase.storage
       .from("archive")
       .upload(folderPath, new Blob([""], { type: "text/plain" }));
-    //for preventing duplication ,added on my own not sure if it is needed
+
     if (uploadError && uploadError.message !== "The resource already exists") {
       console.error("Storage error:", uploadError.message);
       setMessage("❌ Failed to create folder in storage.");
       return;
     }
-    //insert folder details into database
+
     const { error: dbError } = await supabase.from("folders").insert({
       name: folderName,
       created_by: userId,
@@ -120,16 +111,18 @@ function FileManager() {
     }
 
     setFolderName("");
+    setParentId(null);
     setMessage(`✅ Folder '${folderName}' created!`);
   };
-  //time for uploading files
+
   const handleUpload = async () => {
     if (!file || !userId) {
       setMessage("❌ Please select a file to upload.");
       return;
     }
-    //getting path and uploading to archive
-    const fullPath = buildFullPath();
+
+    const uploadFolderId = selectedUploadFolderId ?? currentFolderId ?? null;
+    const fullPath = buildFullPathFromFolderId(uploadFolderId, folders);
     const filePath = fullPath ? `${fullPath}/${file.name}` : `${file.name}`;
 
     const { error: uploadError } = await supabase.storage
@@ -141,7 +134,7 @@ function FileManager() {
       setMessage(`❌ Upload failed: ${uploadError.message}`);
       return;
     }
-    //insert file details into datbase
+
     const { error: dbError } = await supabase.from("files").insert({
       filename: file.name,
       path: filePath,
@@ -149,7 +142,7 @@ function FileManager() {
       size: file.size,
       metadata: {},
       uploaded_by: userId,
-      folder_id: currentFolderId || null,
+      folder_id: uploadFolderId,
     });
 
     if (dbError) {
@@ -159,42 +152,61 @@ function FileManager() {
     }
 
     setFile(null);
+    setSelectedUploadFolderId(null);
     setMessage("✅ File uploaded successfully!");
   };
-  //Used to render folders,sorry frontend people if its confusing,I put it here because the return was looking too long(it is still long :( )
+
+  const toggleFolder = (folderId) => {
+    setExpandedFolders(prev => ({
+      ...prev,
+      [folderId]: !prev[folderId],
+    }));
+  };
+
   const renderFolderTree = (parentId = null, depth = 0) => {
     return folders
       .filter(f => f.parent_id === parentId)
       .map(folder => (
-        <div
+        <section
           key={folder.id}
-          className="border-l-2 border-gray-600 pl-3 ml-1 mb-2"
+          className="border-l-2 border-gray-600 pl-3 ml-1 mb-3"
           style={{ marginLeft: depth * 10 }}
         >
-          <div
-            className="cursor-pointer text-blue-400 hover:underline font-medium"
-            onClick={() => handleFolderClick(folder.id)}
-          >
-            📁 {folder.name}
-          </div>
-          <div className="ml-4">
-            {files
-              .filter(file => file.folder_id === folder.id)
-              .map(file => (
-                <div key={file.id} className="text-gray-300 ml-2">📄 {file.filename}</div>
-              ))}
-          </div>
-          {renderFolderTree(folder.id, depth + 1)}
-        </div>
+          <section className="flex items-center space-x-2">
+            <button
+              onClick={() => toggleFolder(folder.id)}
+              className="text-gray-400 hover:text-white focus:outline-none"
+            >
+              {expandedFolders[folder.id] ? '➖' : '➕'}
+            </button>
+            <span
+              className="cursor-pointer text-blue-400 hover:text-blue-300 font-medium"
+              onClick={() => handleFolderClick(folder.id)}
+            >
+              📁 {folder.name}
+            </span>
+          </section>
+          {expandedFolders[folder.id] && (
+            <aside className="ml-6 mt-2 space-y-1">
+              {files
+                .filter(file => file.folder_id === folder.id)
+                .map(file => (
+                  <span key={file.id} className="text-gray-300 ml-2 flex items-center gap-2">
+                    📄 {file.filename}
+                  </span>
+                ))}
+              {renderFolderTree(folder.id, depth + 1)}
+            </aside>
+          )}
+        </section>
       ));
   };
-//normal stuff without semantic tags,sorry,there is some flex so somewhat confusing
-//its not perfect yet,to go back to root you have to click the breadcrumb trail.
-  return (
-    <div className="p-6 max-w-4xl mx-auto bg-gray-800 shadow-lg rounded-lg text-white space-y-6">
-      <h2 className="text-3xl font-bold border-b border-gray-700 pb-2 mb-4">📁 File Manager</h2>
 
-      <div className="text-sm text-blue-400 space-x-1 flex flex-wrap items-center">
+  return (
+    <main className="p-8 max-w-5xl mx-auto bg-gray-900 shadow-2xl rounded-2xl text-white space-y-8">
+      <h2 className="text-4xl font-extrabold border-b-2 border-gray-700 pb-4 mb-6">📁 File Manager</h2>
+
+      <section className="text-sm text-blue-400 flex flex-wrap items-center space-x-1">
         <span
           className="cursor-pointer hover:underline"
           onClick={() => {
@@ -206,8 +218,8 @@ function FileManager() {
           Root
         </span>
         {breadcrumbTrail.map((folder, index) => (
-          <span key={folder.id}>
-            {' > '}
+          <span key={folder.id} className="flex items-center">
+            <span className="mx-2 text-gray-500">/</span>
             <span
               className="cursor-pointer hover:underline"
               onClick={() => handleBreadcrumbClick(index)}
@@ -216,49 +228,76 @@ function FileManager() {
             </span>
           </span>
         ))}
-      </div>
+      </section>
 
-      <div className="flex items-center gap-3">
+      {/* Create Folder */}
+      <section className="flex flex-col md:flex-row items-center gap-4">
         <input
           type="text"
-          placeholder="Folder name"
+          placeholder="New folder name..."
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
-          className="p-2 border border-gray-600 bg-gray-700 text-white rounded w-full"
+          className="p-3 border border-gray-600 bg-gray-800 text-white rounded-lg w-full md:w-1/2"
         />
+        <select
+          value={parentId || ""}
+          onChange={(e) => setParentId(e.target.value || null)}
+          className="p-2 bg-gray-800 border border-gray-600 rounded-lg text-white w-full md:w-auto"
+        >
+          <option value="">Root</option>
+          {folders.map(folder => (
+            <option key={folder.id} value={folder.id}>
+              {buildFullPathFromFolderId(folder.id, folders)}
+            </option>
+          ))}
+        </select>
         <button
           onClick={handleCreateFolder}
-          className="bg-blue-700 hover:bg-blue-600 px-4 py-2 text-white rounded shadow"
+          className="bg-blue-700 hover:bg-blue-600 px-6 py-3 text-white rounded-lg font-semibold"
         >
           ➕ Create Folder
         </button>
-      </div>
+      </section>
 
-      <div className="bg-gray-700 p-4 rounded border border-gray-600">
+      {/* Folder Tree */}
+      <aside className="bg-gray-800 p-6 rounded-xl border border-gray-700">
         {renderFolderTree()}
-      </div>
+      </aside>
 
-      <div className="flex items-center gap-3">
+      {/* Upload Section */}
+      <section className="flex flex-col md:flex-row items-center gap-4">
         <input
           data-testid="file-input"
           type="file"
           onChange={(e) => setFile(e.target.files[0])}
-          className="text-white file-input file-input-bordered bg-gray-700 border-gray-600"
+          className="block w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-700 file:hover:bg-green-600"
         />
+        <select
+          value={selectedUploadFolderId || ""}
+          onChange={(e) => setSelectedUploadFolderId(e.target.value || null)}
+          className="p-2 bg-gray-800 border border-gray-600 rounded-lg text-white w-full md:w-auto"
+        >
+          <option value="">Root</option>
+          {folders.map(folder => (
+            <option key={folder.id} value={folder.id}>
+              {buildFullPathFromFolderId(folder.id, folders)}
+            </option>
+          ))}
+        </select>
         <button
           onClick={handleUpload}
-          className="bg-green-700 hover:bg-green-600 px-4 py-2 text-white rounded shadow"
+          className="bg-green-700 hover:bg-green-600 px-6 py-3 text-white rounded-lg font-semibold"
         >
           ⬆️ Upload File
         </button>
-      </div>
+      </section>
 
       {message && (
-        <div className="bg-yellow-900 text-yellow-300 border border-yellow-700 rounded px-4 py-2">
+        <article className="bg-yellow-800 text-yellow-300 border border-yellow-600 rounded-lg px-6 py-4">
           {message}
-        </div>
+        </article>
       )}
-    </div>
+    </main>
   );
 }
 
