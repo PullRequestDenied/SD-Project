@@ -20,7 +20,6 @@ function FileManager() {
   const [folders, setFolders] = useState([]);
   const [files, setFiles] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState(null);
-  const [breadcrumbTrail, setBreadcrumbTrail] = useState([]);
   const [folderName, setFolderName] = useState("");
   const [parentId, setParentId] = useState(null);
   const [file, setFile] = useState(null);
@@ -32,52 +31,31 @@ function FileManager() {
     if (!session) return;
 
     const fetchData = async () => {
-      const { data: folderData, error: folderError } = await supabase
+      const { data: folderData } = await supabase
         .from("folders")
         .select("id, name, parent_id");
 
-      if (folderError) {
-        console.error("Folder fetch error:", folderError.message);
-      } else {
-        setFolders(folderData);
-      }
-
-      const { data: fileData, error: fileError } = await supabase
+      const { data: fileData } = await supabase
         .from("files")
         .select("id, filename, folder_id");
 
-      if (fileError) {
-        console.error("File fetch error:", fileError.message);
-      } else {
-        setFiles(fileData.filter(f => !f.filename.endsWith(".keep")));
-      }
+      if (folderData) setFolders(folderData);
+      if (fileData) setFiles(fileData.filter(f => !f.filename.endsWith(".keep")));
     };
 
     fetchData();
-  }, [session, currentFolderId]);
-
-  const buildFullPath = () => {
-    return buildFullPathFromFolderId(currentFolderId, folders);
-  };
+  }, [session]);
 
   const handleFolderClick = (folderId) => {
-    const newTrail = [];
-    let current = folders.find(f => f.id === folderId);
-    while (current) {
-      newTrail.unshift(current);
-      current = folders.find(f => f.id === current.parent_id);
-    }
-    setBreadcrumbTrail(newTrail);
     setCurrentFolderId(folderId);
     setParentId(folderId);
   };
 
-  const handleBreadcrumbClick = (index) => {
-    const newTrail = breadcrumbTrail.slice(0, index + 1);
-    const lastFolder = newTrail[newTrail.length - 1];
-    setCurrentFolderId(lastFolder?.id || null);
-    setParentId(lastFolder?.id || null);
-    setBreadcrumbTrail(newTrail);
+  const toggleFolderExpand = (folderId) => {
+    setExpandedFolders(prev => ({
+      ...prev,
+      [folderId]: !prev[folderId]
+    }));
   };
 
   const handleCreateFolder = async () => {
@@ -92,27 +70,19 @@ function FileManager() {
       .from("archive")
       .upload(folderPath, new Blob([""], { type: "text/plain" }));
 
-    if (uploadError && uploadError.message !== "The resource already exists") {
-      console.error("Storage error:", uploadError.message);
-      setMessage("❌ Failed to create folder in storage.");
-      return;
-    }
-
     const { error: dbError } = await supabase.from("folders").insert({
       name: folderName,
       created_by: userId,
       parent_id: parentId || null,
     });
 
-    if (dbError) {
-      console.error("DB error:", dbError.message);
-      setMessage("❌ Failed to create folder in database.");
-      return;
+    if (uploadError || dbError) {
+      setMessage("❌ Error creating folder.");
+    } else {
+      setFolderName("");
+      setParentId(null);
+      setMessage(`✅ Folder '${folderName}' created!`);
     }
-
-    setFolderName("");
-    setParentId(null);
-    setMessage(`✅ Folder '${folderName}' created!`);
   };
 
   const handleUpload = async () => {
@@ -129,12 +99,6 @@ function FileManager() {
       .from("archive")
       .upload(filePath, file);
 
-    if (uploadError) {
-      console.error("Upload error:", uploadError.message);
-      setMessage(`❌ Upload failed: ${uploadError.message}`);
-      return;
-    }
-
     const { error: dbError } = await supabase.from("files").insert({
       filename: file.name,
       path: filePath,
@@ -145,158 +109,156 @@ function FileManager() {
       folder_id: uploadFolderId,
     });
 
-    if (dbError) {
-      console.error("DB error:", dbError.message);
-      setMessage("❌ Failed to save file in DB.");
-      return;
+    if (uploadError || dbError) {
+      setMessage("❌ Upload failed.");
+    } else {
+      setFile(null);
+      setSelectedUploadFolderId(null);
+      setMessage("✅ File uploaded successfully!");
     }
-
-    setFile(null);
-    setSelectedUploadFolderId(null);
-    setMessage("✅ File uploaded successfully!");
   };
 
-  const toggleFolder = (folderId) => {
-    setExpandedFolders(prev => ({
-      ...prev,
-      [folderId]: !prev[folderId],
-    }));
-  };
-
-  const renderFolderTree = (parentId = null, depth = 0) => {
+  const renderFolderTree = (parentId = null) => {
     return folders
       .filter(f => f.parent_id === parentId)
-      .map(folder => (
-        <section
-          key={folder.id}
-          className="border-l-2 border-gray-600 pl-3 ml-1 mb-3"
-          style={{ marginLeft: depth * 10 }}
-        >
-          <section className="flex items-center space-x-2">
-            <button
-              onClick={() => toggleFolder(folder.id)}
-              className="text-gray-400 hover:text-white focus:outline-none"
-            >
-              {expandedFolders[folder.id] ? '➖' : '➕'}
-            </button>
-            <span
-              className="cursor-pointer text-blue-400 hover:text-blue-300 font-medium"
+      .map(folder => {
+        const hasSubfolders = folders.some(f => f.parent_id === folder.id);
+        const isExpanded = expandedFolders[folder.id];
+
+        return (
+          <div key={folder.id} className="pl-2">
+            <div
+              className="flex items-center justify-between py-2 px-2 hover:bg-gray-700 rounded-lg cursor-pointer transition duration-150"
               onClick={() => handleFolderClick(folder.id)}
             >
-              📁 {folder.name}
-            </span>
-          </section>
-          {expandedFolders[folder.id] && (
-            <aside className="ml-6 mt-2 space-y-1">
-              {files
-                .filter(file => file.folder_id === folder.id)
-                .map(file => (
-                  <span key={file.id} className="text-gray-300 ml-2 flex items-center gap-2">
-                    📄 {file.filename}
+              <span className="flex items-center gap-2">
+                📁 <span className="font-semibold">{folder.name}</span>
+              </span>
+
+              <div className="w-6 text-right">
+                {hasSubfolders ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFolderExpand(folder.id);
+                    }}
+                    className="text-blue-400 hover:text-blue-300 text-lg select-none"
+                  >
+                    {isExpanded ? "➖" : "➕"}
                   </span>
-                ))}
-              {renderFolderTree(folder.id, depth + 1)}
-            </aside>
-          )}
-        </section>
-      ));
+                ) : (
+                  <span className="text-gray-500 text-lg select-none">
+                    ➕
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {isExpanded && (
+              <div className="pl-4">{renderFolderTree(folder.id)}</div>
+            )}
+          </div>
+        );
+      });
   };
 
   return (
-    <main className="p-8 max-w-5xl mx-auto bg-gray-900 shadow-2xl rounded-2xl text-white space-y-8">
-      <h2 className="text-4xl font-extrabold border-b-2 border-gray-700 pb-4 mb-6">📁 File Manager</h2>
-
-      <section className="text-sm text-blue-400 flex flex-wrap items-center space-x-1">
-        <span
-          className="cursor-pointer hover:underline"
-          onClick={() => {
-            setCurrentFolderId(null);
-            setBreadcrumbTrail([]);
-            setParentId(null);
-          }}
-        >
-          Root
-        </span>
-        {breadcrumbTrail.map((folder, index) => (
-          <span key={folder.id} className="flex items-center">
-            <span className="mx-2 text-gray-500">/</span>
-            <span
-              className="cursor-pointer hover:underline"
-              onClick={() => handleBreadcrumbClick(index)}
-            >
-              {folder.name}
-            </span>
-          </span>
-        ))}
-      </section>
-
-      {/* Create Folder */}
-      <section className="flex flex-col md:flex-row items-center gap-4">
-        <input
-          type="text"
-          placeholder="New folder name..."
-          value={folderName}
-          onChange={(e) => setFolderName(e.target.value)}
-          className="p-3 border border-gray-600 bg-gray-800 text-white rounded-lg w-full md:w-1/2"
-        />
-        <select
-          value={parentId || ""}
-          onChange={(e) => setParentId(e.target.value || null)}
-          className="p-2 bg-gray-800 border border-gray-600 rounded-lg text-white w-full md:w-auto"
-        >
-          <option value="">Root</option>
-          {folders.map(folder => (
-            <option key={folder.id} value={folder.id}>
-              {buildFullPathFromFolderId(folder.id, folders)}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={handleCreateFolder}
-          className="bg-blue-700 hover:bg-blue-600 px-6 py-3 text-white rounded-lg font-semibold"
-        >
-          ➕ Create Folder
-        </button>
-      </section>
-
-      {/* Folder Tree */}
-      <aside className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-        {renderFolderTree()}
-      </aside>
-
-      {/* Upload Section */}
-      <section className="flex flex-col md:flex-row items-center gap-4">
-        <input
-          data-testid="file-input"
-          type="file"
-          onChange={(e) => setFile(e.target.files[0])}
-          className="block w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-700 file:hover:bg-green-600"
-        />
-        <select
-          value={selectedUploadFolderId || ""}
-          onChange={(e) => setSelectedUploadFolderId(e.target.value || null)}
-          className="p-2 bg-gray-800 border border-gray-600 rounded-lg text-white w-full md:w-auto"
-        >
-          <option value="">Root</option>
-          {folders.map(folder => (
-            <option key={folder.id} value={folder.id}>
-              {buildFullPathFromFolderId(folder.id, folders)}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={handleUpload}
-          className="bg-green-700 hover:bg-green-600 px-6 py-3 text-white rounded-lg font-semibold"
-        >
-          ⬆️ Upload File
-        </button>
-      </section>
+    <main className="p-8 max-w-7xl mx-auto bg-gray-950 text-white rounded-2xl shadow-lg">
+      <h2 className="text-4xl font-bold text-center mb-10">📁 File Manager</h2>
 
       {message && (
-        <article className="bg-yellow-800 text-yellow-300 border border-yellow-600 rounded-lg px-6 py-4">
+        <div className="bg-yellow-800 text-yellow-300 rounded-lg p-4 mb-6 text-center">
           {message}
-        </article>
+        </div>
       )}
+
+      {/* Folder tree + files section */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Folders */}
+        <aside className="w-full lg:w-1/3 bg-gray-900 p-6 rounded-2xl shadow-md">
+          <h3 className="text-2xl font-semibold mb-6">Folders</h3>
+          {renderFolderTree()}
+        </aside>
+
+        {/* Files */}
+        <section className="w-full lg:w-2/3 bg-gray-900 p-6 rounded-2xl shadow-md">
+          <h3 className="text-2xl font-semibold mb-6">Files</h3>
+          <div className="grid gap-4">
+            {files.filter(file => file.folder_id === currentFolderId).length > 0 ? (
+              files
+                .filter(file => file.folder_id === currentFolderId)
+                .map(file => (
+                  <div key={file.id} className="p-4 bg-gray-850 rounded-lg border border-gray-700 hover:brightness-110 transition">
+                    📄 {file.filename}
+                  </div>
+                ))
+            ) : (
+              <p className="text-gray-400">No files in this folder.</p>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* Bottom actions */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+        {/* Create Folder */}
+        <div className="bg-gray-900 p-6 rounded-2xl shadow-md flex flex-col gap-4">
+          <h3 className="text-2xl font-semibold mb-4">➕ Create New Folder</h3>
+          <input
+            type="text"
+            placeholder="Folder name..."
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            className="p-3 border border-gray-700 bg-gray-850 rounded-lg"
+          />
+          <select
+            value={parentId || ""}
+            onChange={(e) => setParentId(e.target.value || null)}
+            className="p-3 border border-gray-700 bg-gray-850 rounded-lg"
+          >
+            <option value="">Root</option>
+            {folders.map(folder => (
+              <option key={folder.id} value={folder.id}>
+                {buildFullPathFromFolderId(folder.id, folders)}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleCreateFolder}
+            className="bg-blue-700 hover:bg-blue-600 p-3 rounded-lg font-semibold"
+          >
+            ➕ Create Folder
+          </button>
+        </div>
+
+        {/* Upload File */}
+        <div className="bg-gray-900 p-6 rounded-2xl shadow-md flex flex-col gap-4">
+          <h3 className="text-2xl font-semibold mb-4">⬆️ Upload New File</h3>
+          <input
+            type="file"
+            onChange={(e) => setFile(e.target.files[0])}
+            className="block w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-700 file:hover:bg-green-600"
+          />
+          <select
+            value={selectedUploadFolderId || ""}
+            onChange={(e) => setSelectedUploadFolderId(e.target.value || null)}
+            className="p-3 border border-gray-700 bg-gray-850 rounded-lg"
+          >
+            <option value="">Root</option>
+            {folders.map(folder => (
+              <option key={folder.id} value={folder.id}>
+                {buildFullPathFromFolderId(folder.id, folders)}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleUpload}
+            className="bg-green-700 hover:bg-green-600 p-3 rounded-lg font-semibold"
+          >
+            ⬆️ Upload File
+          </button>
+        </div>
+      </section>
     </main>
   );
 }
