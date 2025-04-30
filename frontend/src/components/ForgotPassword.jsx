@@ -1,7 +1,6 @@
 import React, {useState} from 'react'
 import { Link } from 'react-router-dom'
 import { UserAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
 import { useDarkMode } from '../context/DarkModeContext'
 import { ArrowLeft } from 'lucide-react';
 
@@ -15,7 +14,7 @@ const ForgotPassword = () => {
     const [sentResetLink, setSentResetLink] = useState(false);
     
 
-    const handleResetPassword = async (e) => {
+    const handleForgotPassword = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
@@ -64,7 +63,7 @@ const ForgotPassword = () => {
               <p className="text-m text-center mb-4">Password reset link sent your email</p>
             )}
     
-            <form onSubmit={handleResetPassword} className="space-y-4">
+            <form onSubmit={handleForgotPassword} className="space-y-4">
               <input
                 onChange={(e) => setEmail(e.target.value)}
                 className={`w-full p-3 rounded-md focus:outline-none focus:ring-2 transition ${
