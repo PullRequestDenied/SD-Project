@@ -59,7 +59,6 @@ describe('ForgotPassword component', () => {
 
         await waitFor(() => {
             expect(mockRequestReset).toHaveBeenCalledWith('test@example.com');
-            expect(screen.getByText(/reset link sent/i)).toBeInTheDocument();
         });
     });
 
@@ -78,6 +77,29 @@ describe('ForgotPassword component', () => {
 
         await waitFor(() => {
             expect(screen.getByText(/reset link sent/i)).toBeInTheDocument();
+        });
+    });
+
+    it('Shows error if reset fails', async () => {
+        mockRequestReset.mockResolvedValue({
+            success: false,
+            error: { message: 'failed to send reset link' }
+        });
+
+        render(
+            <MemoryRouter>
+                <ForgotPassword />
+            </MemoryRouter>
+        );
+
+        fireEvent.change(screen.getByPlaceholderText(/you@example.com/i), {
+            target: { value: 'test@example.com' },
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/failed to send reset link/i)).toBeInTheDocument();
         });
     });
 });
