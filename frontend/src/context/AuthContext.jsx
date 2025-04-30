@@ -63,8 +63,16 @@ export const AuthContextProvider = ({ children }) => {
         setSession(undefined);
     };
 
+    //SignOut
+    const requestReset = async (email) => {
+        await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: 'http://localhost:5173/reset-password',
+        });
+        return {success: true};
+    };
+
     return (
-        <AuthContext.Provider value={{ session,loading, signUpNewUser, signOut, signInUser }}>
+        <AuthContext.Provider value={{ session,loading, signUpNewUser, signOut, signInUser, requestReset }}>
             {children}
         </AuthContext.Provider>
     );

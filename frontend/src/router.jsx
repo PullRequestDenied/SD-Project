@@ -6,6 +6,7 @@ import Dashboard from "./components/Dashboard";
 import PrivateRoute from "./components/PrivateRoute";
 import ContactForm from "./components/ContactForm";
 import PrivacyPolicy from "./components/PrivacyPolicy";
+import ForgotPassword from "./components/ForgotPassword";
 
 export const router = createBrowserRouter([
     {path: "/", element: <App />},
@@ -14,4 +15,5 @@ export const router = createBrowserRouter([
     {path: "/dashboard", element: <PrivateRoute> <Dashboard /> </PrivateRoute>},
     {path: "/contact", element: <ContactForm /> },
     {path: "/privacypolicy", element: <PrivacyPolicy /> },
+    {path: "/forgotpassword", element: <ForgotPassword /> },
 ]);
