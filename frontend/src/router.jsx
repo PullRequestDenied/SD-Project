@@ -7,6 +7,8 @@ import PrivateRoute from "./components/PrivateRoute";
 import ContactForm from "./components/ContactForm";
 import PrivacyPolicy from "./components/PrivacyPolicy";
 import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
+import AuthenticatedRoute from "./components/AuthenticatedRoute";
 
 export const router = createBrowserRouter([
     {path: "/", element: <App />},
@@ -16,4 +18,5 @@ export const router = createBrowserRouter([
     {path: "/contact", element: <ContactForm /> },
     {path: "/privacypolicy", element: <PrivacyPolicy /> },
     {path: "/forgotpassword", element: <ForgotPassword /> },
+    {path: "/resetpassword", element: <AuthenticatedRoute> <ResetPassword /> </AuthenticatedRoute>},
 ]);

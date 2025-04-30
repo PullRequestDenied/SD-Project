@@ -66,7 +66,7 @@ export const AuthContextProvider = ({ children }) => {
     //SignOut
     const requestReset = async (email) => {
         await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'http://localhost:5173/reset-password',
+            redirectTo: 'http://localhost:5173/resetpassword',
         });
         return {success: true};
     };
