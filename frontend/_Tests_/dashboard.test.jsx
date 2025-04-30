@@ -1,0 +1,75 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import Dashboard from '../src/components/Dashboard';
+import { MemoryRouter } from 'react-router-dom';
+import '@testing-library/jest-dom/vitest';
+
+// ✅ Mock: react-router's useNavigate
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+// ✅ Mock: UserAuth
+vi.mock('../src/context/AuthContext', () => ({
+  UserAuth: vi.fn()
+}));
+
+// ✅ Mock: FileManager
+vi.mock('../src/components/FileManager', () => ({
+  default: () => <div>Mocked FileManager</div>
+}));
+
+import { UserAuth } from '../src/context/AuthContext';
+
+describe('Dashboard component', () => {
+  const mockSignOut = vi.fn();
+
+  beforeEach(() => {
+    mockNavigate.mockReset();
+    mockSignOut.mockReset();
+
+    UserAuth.mockImplementation(() => ({
+      session: {
+        user: {
+          user_metadata: {
+            display_name: 'TestUser'
+          }
+        }
+      },
+      signOut: mockSignOut
+    }));
+  });
+
+  it('renders the dashboard with user name and FileManager', () => {
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
+    expect(screen.getByText(/welcome TestUser/i)).toBeInTheDocument();
+    expect(screen.getByText(/Upload Test/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mocked FileManager/i)).toBeInTheDocument();
+  });
+
+  it('calls signOut and navigates on sign out click', async () => {
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText(/sign out/i));
+
+    await waitFor(() => {
+      expect(mockSignOut).toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith('/signin');
+    });
+  });
+});

@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
+=======
+import { useState } from "react";
+>>>>>>> main
 import { supabase } from "../supabaseClient";
 import { UserAuth } from "../context/AuthContext";
 
 function UploadTest() {
   const [file, setFile] = useState(null);   
+<<<<<<< HEAD
   const [folders, setFolders] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [message, setMessage] = useState("");   
@@ -23,6 +28,10 @@ function UploadTest() {
     };
     fetchFolders();
   }, [session]);   
+=======
+  const [message, setMessage] = useState("");   
+  const { session } = UserAuth();   
+>>>>>>> main
   //when file seleceted from input,select first index in event and store it in state
   const handleFileChange = (e) => setFile(e.target.files[0]);
   const handleUpload = async () => {
@@ -33,10 +42,14 @@ function UploadTest() {
   }
 
   const userId = session.user.id;
+<<<<<<< HEAD
   const selectedFolderName = selectedFolder === null 
     ? "" 
     : folders.find(f => f.id === selectedFolder)?.name || "";
   const filePath = `${selectedFolderName}/${file.name}`;
+=======
+  const filePath = `test_uploads/${file.name}`;
+>>>>>>> main
 
   //console.log("Uploading to storage:", filePath);
 //uploading to storage
@@ -59,7 +72,10 @@ const { error: dbError } = await supabase.from("files").insert({
   size: file.size,
   metadata: {},
   uploaded_by: userId,
+<<<<<<< HEAD
   folder_id: folders.selectedFolder.id || null, // Use the selected folder ID
+=======
+>>>>>>> main
 });
 if (dbError) {
   console.error("Database error:", dbError);
@@ -81,6 +97,7 @@ setMessage("File uploaded and saved to the database");
               ) : (
                 <p>Please sign in to access this page.</p>
               )}
+<<<<<<< HEAD
               <label>Select Folder:</label>
 <select
   value={selectedFolder || ""}
@@ -98,6 +115,9 @@ setMessage("File uploaded and saved to the database");
 </select>
             </div>
             
+=======
+            </div>
+>>>>>>> main
           );
         }
 
