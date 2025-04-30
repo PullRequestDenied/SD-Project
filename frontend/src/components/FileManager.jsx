@@ -51,7 +51,7 @@ function FileManager() {
 
       const { data: fileData, error: fileError } = await supabase
         .from("files")
-        .select("id, filename, folder_id")
+        .select("id, filename, folder_id,path") //added path to get the file path for deletion
 
       if (fileError) {
         console.error("File fetch error:", fileError.message);
@@ -161,6 +161,39 @@ function FileManager() {
     setFile(null);
     setMessage("✅ File uploaded successfully!");
   };
+  const handleDeleteFile = async (fileId) => {
+    const fileToDelete = files.find(f => f.id === fileId);
+    if (!fileToDelete) {
+      setMessage("❌ File not found.");
+      return;
+    }
+    console.log(fileToDelete.path);
+    console.log("Deleting from path:", fileToDelete.path);
+
+    const { error: storageError } = await supabase.storage.from("archive").remove(fileToDelete.path);
+    console.log(storageError);
+  
+    if (storageError) {
+      console.error("Storage delete error:", storageError.message);
+      setMessage("❌ Failed to delete file from storage.");
+      return;
+    }
+  
+    const { error: dbError } = await supabase
+      .from("files")
+      .delete()
+      .eq("id", fileId);
+
+  
+    if (dbError) {
+      console.error("Database delete error:", dbError.message);
+      setMessage("❌ File deleted from storage but not from database.");
+      return;
+    }
+  
+    setFiles(files.filter(f => f.id !== fileId)); // update UI without refetching
+    setMessage(`✅ File '${fileToDelete.filename}' deleted successfully.`);
+  };
   //Used to render folders,sorry frontend people if its confusing,I put it here because the return was looking too long(it is still long :( )
   const renderFolderTree = (parentId = null, depth = 0) => {
     return folders
@@ -181,7 +214,14 @@ function FileManager() {
             {files
               .filter(file => file.folder_id === folder.id)
               .map(file => (
-                <div key={file.id} className="text-gray-300 ml-2">📄 {file.filename}</div>
+                <div key={file.id} className="text-gray-300 ml-2">📄 {file.filename}
+                    <button
+                      onClick={() => handleDeleteFile(file.id)}
+                      className="text-red-400 hover:text-red-300 text-sm ml-4"
+                    >
+                    Delete
+                  </button>
+                </div>
               ))}
           </div>
           {renderFolderTree(folder.id, depth + 1)}
