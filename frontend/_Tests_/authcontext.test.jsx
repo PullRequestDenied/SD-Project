@@ -11,16 +11,19 @@ vi.mock('../src/supabaseClient', () => ({
       signInWithPassword: vi.fn(),
       signOut: vi.fn(),
       getSession: vi.fn(),
-      onAuthStateChange: vi.fn()
+      onAuthStateChange: vi.fn(),
+      resetPasswordForEmail: vi.fn(), 
+      updateUser: vi.fn(),
     }
   }
 }));
 
 import { supabase } from '../src/supabaseClient';
+import { redirect } from 'react-router-dom';
 
 // Dummy consumer component
 const Consumer = () => {
-  const { session, loading, signUpNewUser, signInUser, signOut } = UserAuth();
+  const { session, loading, signUpNewUser, signInUser, signOut, requestReset, changePassword } = UserAuth();
   return (
     <div>
       <p>Session: {session ? 'yes' : 'no'}</p>
@@ -28,6 +31,8 @@ const Consumer = () => {
       <button onClick={() => signUpNewUser('a@test.com', '123', 'test')}>SignUp</button>
       <button onClick={() => signInUser('a@test.com', '123')}>SignIn</button>
       <button onClick={signOut}>SignOut</button>
+      <button onClick={() => requestReset('a@test.com')}>Send Link</button>
+      <button onClick={() => changePassword('123')}>Change Password</button>
     </div>
   );
 };
@@ -104,6 +109,43 @@ describe('AuthContext', () => {
 
     await waitFor(() =>
       expect(supabase.auth.signOut).toHaveBeenCalled()
+    );
+  });
+
+  it('calls requestReset correctly', async () => {
+    supabase.auth.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
+
+    render(
+      <AuthContextProvider>
+        <Consumer />
+      </AuthContextProvider>
+    );
+
+    screen.getByText('Send Link').click();
+
+    await waitFor(() =>
+      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+        'a@test.com',
+        { redirectTo: 'http://localhost:5173/resetpassword' }
+      )
+    );
+  });
+
+  it('calls changePassword correctly', async () => {
+    supabase.auth.updateUser.mockResolvedValue({ data: {}, error: null });
+
+    render(
+      <AuthContextProvider>
+        <Consumer />
+      </AuthContextProvider>
+    );
+
+    screen.getByText('Change Password').click();
+
+    await waitFor(() =>
+      expect(supabase.auth.updateUser).toHaveBeenCalledWith({
+        password: '123'
+      })
     );
   });
 });

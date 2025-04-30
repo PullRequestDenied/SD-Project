@@ -23,7 +23,7 @@ const ResetPassword = () => {
         try {
             const result = await changePassword(password);
             if (result.success) {
-                navigate('/Dashboard');
+                navigate('/Signin');
             } else {
                 setError(result.error.message);
             }
