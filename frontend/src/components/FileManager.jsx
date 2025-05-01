@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { UserAuth } from "../context/AuthContext";
+import { useDarkMode } from "../context/DarkModeContext";
 
-// Helper to build folder path
 const buildFullPathFromFolderId = (folderId, folders) => {
   let path = [];
   let current = folders.find(f => f.id === folderId);
@@ -15,6 +15,7 @@ const buildFullPathFromFolderId = (folderId, folders) => {
 
 function FileManager() {
   const { session } = UserAuth();
+  const { darkMode } = useDarkMode();
   const userId = session?.user?.id;
 
   const [folders, setFolders] = useState([]);
@@ -128,7 +129,9 @@ function FileManager() {
         return (
           <div key={folder.id} className="pl-2">
             <div
-              className="flex items-center justify-between py-2 px-2 hover:bg-gray-700 rounded-lg cursor-pointer transition duration-150"
+              className={`flex items-center justify-between py-2 px-2 rounded-lg cursor-pointer transition ${
+                darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
+              }`}
               onClick={() => handleFolderClick(folder.id)}
             >
               <span className="flex items-center gap-2">
@@ -142,14 +145,12 @@ function FileManager() {
                       e.stopPropagation();
                       toggleFolderExpand(folder.id);
                     }}
-                    className="text-blue-400 hover:text-blue-300 text-lg select-none"
+                    className="text-indigo-500 hover:text-indigo-400 text-lg select-none"
                   >
                     {isExpanded ? "➖" : "➕"}
                   </span>
                 ) : (
-                  <span className="text-gray-500 text-lg select-none">
-                    ➕
-                  </span>
+                  <span className="text-gray-400 text-lg select-none">➕</span>
                 )}
               </div>
             </div>
@@ -163,37 +164,49 @@ function FileManager() {
   };
 
   return (
-    <main className="p-8 max-w-7xl mx-auto bg-gray-950 text-white rounded-2xl shadow-lg">
+    <main className={`p-8 max-w-7xl mx-auto rounded-2xl shadow-lg transition-colors duration-300 ${
+      darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
+    }`}>
       <h2 className="text-4xl font-bold text-center mb-10">📁 File Manager</h2>
 
       {message && (
-        <div className="bg-yellow-800 text-yellow-300 rounded-lg p-4 mb-6 text-center">
+        <div className={`rounded-lg p-4 mb-6 text-center font-medium ${
+          darkMode ? "bg-yellow-900 text-yellow-300" : "bg-yellow-100 text-yellow-800"
+        }`}>
           {message}
         </div>
       )}
 
-      {/* Folder tree + files section */}
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Folders */}
-        <aside className="w-full lg:w-1/3 bg-gray-900 p-6 rounded-2xl shadow-md">
+        <aside className={`w-full lg:w-1/3 p-6 rounded-2xl shadow-md transition ${
+          darkMode ? "bg-gray-800 border border-gray-700" : "bg-gray-50 border border-gray-200"
+        }`}>
           <h3 className="text-2xl font-semibold mb-6">Folders</h3>
           {renderFolderTree()}
         </aside>
 
         {/* Files */}
-        <section className="w-full lg:w-2/3 bg-gray-900 p-6 rounded-2xl shadow-md">
+        <section className={`w-full lg:w-2/3 p-6 rounded-2xl shadow-md transition ${
+          darkMode ? "bg-gray-800 border border-gray-700" : "bg-gray-50 border border-gray-200"
+        }`}>
           <h3 className="text-2xl font-semibold mb-6">Files</h3>
           <div className="grid gap-4">
             {files.filter(file => file.folder_id === currentFolderId).length > 0 ? (
               files
                 .filter(file => file.folder_id === currentFolderId)
                 .map(file => (
-                  <div key={file.id} className="p-4 bg-gray-850 rounded-lg border border-gray-700 hover:brightness-110 transition">
+                  <div
+                    key={file.id}
+                    className={`p-4 rounded-lg border transition ${
+                      darkMode ? "bg-gray-700 border-gray-600 hover:border-indigo-400" : "bg-white border-gray-300 hover:border-indigo-400"
+                    }`}
+                  >
                     📄 {file.filename}
                   </div>
                 ))
             ) : (
-              <p className="text-gray-400">No files in this folder.</p>
+              <p className="text-gray-500">No files in this folder.</p>
             )}
           </div>
         </section>
@@ -202,19 +215,25 @@ function FileManager() {
       {/* Bottom actions */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
         {/* Create Folder */}
-        <div className="bg-gray-900 p-6 rounded-2xl shadow-md flex flex-col gap-4">
+        <div className={`p-6 rounded-2xl shadow-md flex flex-col gap-4 transition ${
+          darkMode ? "bg-gray-800 border border-gray-700" : "bg-gray-50 border border-gray-200"
+        }`}>
           <h3 className="text-2xl font-semibold mb-4">➕ Create New Folder</h3>
           <input
             type="text"
             placeholder="Folder name..."
             value={folderName}
             onChange={(e) => setFolderName(e.target.value)}
-            className="p-3 border border-gray-700 bg-gray-850 rounded-lg"
+            className={`p-3 rounded-lg border ${
+              darkMode ? "bg-gray-900 border-gray-600 text-white" : "bg-white border-gray-300 text-black"
+            }`}
           />
           <select
             value={parentId || ""}
             onChange={(e) => setParentId(e.target.value || null)}
-            className="p-3 border border-gray-700 bg-gray-850 rounded-lg"
+            className={`p-3 rounded-lg border ${
+              darkMode ? "bg-gray-900 border-gray-600 text-white" : "bg-white border-gray-300 text-black"
+            }`}
           >
             <option value="">Root</option>
             {folders.map(folder => (
@@ -225,24 +244,28 @@ function FileManager() {
           </select>
           <button
             onClick={handleCreateFolder}
-            className="bg-blue-700 hover:bg-blue-600 p-3 rounded-lg font-semibold"
+            className="bg-indigo-600 hover:bg-indigo-500 p-3 rounded-lg font-semibold text-white"
           >
             ➕ Create Folder
           </button>
         </div>
 
         {/* Upload File */}
-        <div className="bg-gray-900 p-6 rounded-2xl shadow-md flex flex-col gap-4">
+        <div className={`p-6 rounded-2xl shadow-md flex flex-col gap-4 transition ${
+          darkMode ? "bg-gray-800 border border-gray-700" : "bg-gray-50 border border-gray-200"
+        }`}>
           <h3 className="text-2xl font-semibold mb-4">⬆️ Upload New File</h3>
           <input
             type="file"
             onChange={(e) => setFile(e.target.files[0])}
-            className="block w-full text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-700 file:hover:bg-green-600"
+            className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-600 file:hover:bg-green-500 text-white"
           />
           <select
             value={selectedUploadFolderId || ""}
             onChange={(e) => setSelectedUploadFolderId(e.target.value || null)}
-            className="p-3 border border-gray-700 bg-gray-850 rounded-lg"
+            className={`p-3 rounded-lg border ${
+              darkMode ? "bg-gray-900 border-gray-600 text-white" : "bg-white border-gray-300 text-black"
+            }`}
           >
             <option value="">Root</option>
             {folders.map(folder => (
@@ -253,7 +276,7 @@ function FileManager() {
           </select>
           <button
             onClick={handleUpload}
-            className="bg-green-700 hover:bg-green-600 p-3 rounded-lg font-semibold"
+            className="bg-green-600 hover:bg-green-500 p-3 rounded-lg font-semibold text-white"
           >
             ⬆️ Upload File
           </button>
