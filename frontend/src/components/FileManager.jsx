@@ -53,7 +53,7 @@ function FileManager() {
 
       const { data: fileData, error: fileError } = await supabase
         .from("files")
-        .select("id, filename, folder_id")
+        .select("id, filename, folder_id,path") //added path to get the file path for deletion
 
       if (fileError) {
         console.error("File fetch error:", fileError.message);
