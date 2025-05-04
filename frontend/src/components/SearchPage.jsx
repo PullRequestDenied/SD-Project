@@ -14,10 +14,13 @@ function SearchPage() {
     }
 
     const { data, error } = await supabase
-      .from('files')
-      .select('*')
-      .textSearch('document', `'${searchTerm}'`);
-
+    .from('files')
+    .select('*')
+    .textSearch('document', searchTerm, {
+      config: 'english',
+      type: 'plain'
+    });
+  
     if (error) {
       console.error('Search error:', error.message);
       setMessage(`❌ Search failed: ${error.message}`);
