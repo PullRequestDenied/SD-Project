@@ -470,14 +470,14 @@ const renderFolderTree = (parentId = null, depth = 0) => {
               <div key={file.id} className="flex justify-between items-center text-gray-300 ml-2">
                 <span>📄 {file.filename}</span>
                 <div className="flex items-center space-x-2">
-                  <button
+                  <button 
                     onClick={() => handleDelete(null, file.id, file.filename)}
                     className="text-red-400 hover:text-red-300 text-sm"
                     title="Delete file"
                   >
                     🗑️
                   </button>
-                  <button
+                  <button 
                     onClick={() => handleMove({ file, destinationFolderId: copyTargetFolderId })}
                     className="text-yellow-400 hover:text-yellow-300 text-sm"
                     title="Move file to selected folder"
