@@ -314,6 +314,113 @@ function FileManager() {
       setMessage("❌ Unexpected error during move.");
     }
   };
+  const handleCopy = async ({ file = null, folderId = null, destinationFolderId }) => {
+    if (!destinationFolderId) {
+      setMessage("❌ Please select a destination folder.");
+      return;
+    }
+  
+    try {
+      if (file) {
+        // ➕ Copy a single file to another folder
+  
+        const { error } = await supabase.from("files").insert({
+          filename: newFilename,
+          path: file.path, // still points to the same file in storage
+          type: file.type,
+          size: file.size,
+          metadata: file.metadata || {},
+          uploaded_by: file.uploaded_by,
+          folder_id: destinationFolderId,
+        });
+  
+        if (error) {
+          console.error("File copy error:", error.message);
+          setMessage("❌ Failed to copy file.");
+          return;
+        }
+  
+        setMessage(`✅ File '${file.filename}' copied.`);
+        return;
+      }
+  
+      if (folderId) {
+        // ➕ Copy a folder and all nested folders/files
+        const { data: allFolders } = await supabase.from("folders").select("*");
+        const { data: allFiles } = await supabase.from("files").select("*");
+  
+        const folderMap = {}; // oldFolderId → newFolderId
+  
+        const getDescendants = (parentId) => {
+          const children = allFolders.filter(f => f.parent_id === parentId);
+          return children.flatMap(child => [child, ...getDescendants(child.id)]);
+        };
+  
+        const sourceFolder = allFolders.find(f => f.id === folderId);
+        if (!sourceFolder) {
+          setMessage("❌ Source folder not found.");
+          return;
+        }
+  
+        const descendantFolders = [sourceFolder, ...getDescendants(folderId)];
+  
+        // Copy folders and track their new IDs
+        for (const folder of descendantFolders) {
+          const newFolder = {
+            name: folder.name + " (copy)",
+            created_by: folder.created_by,
+            parent_id:
+              folder.id === folderId
+                ? destinationFolderId
+                : folderMap[folder.parent_id],
+          };
+  
+          const { data: insertedFolder, error } = await supabase
+            .from("folders")
+            .insert(newFolder)
+            .select()
+            .single();
+  
+          if (error) {
+            console.error("Folder copy error:", error.message);
+            setMessage("❌ Failed to copy folder.");
+            return;
+          }
+  
+          folderMap[folder.id] = insertedFolder.id;
+        }
+  
+        // Copy all files within copied folders
+        const filesToCopy = allFiles.filter(f => folderMap[f.folder_id]);
+  
+        for (const file of filesToCopy) {
+          const timestamp = Date.now();
+          const newFilename = `${file.filename.replace(/\.(\w+)$/, `-copy-${timestamp}.$1`)}`;
+  
+          const { error: fileError } = await supabase.from("files").insert({
+            filename: newFilename,
+            path: file.path,
+            type: file.type,
+            size: file.size,
+            metadata: file.metadata || {},
+            uploaded_by: file.uploaded_by,
+            folder_id: folderMap[file.folder_id],
+          });
+  
+          if (fileError) {
+            console.error("File copy in folder error:", fileError.message);
+            setMessage("❌ Failed to copy one or more files.");
+            return;
+          }
+        }
+  
+        setMessage("✅ Folder and contents copied successfully.");
+      }
+    } catch (err) {
+      console.error("Copy exception:", err);
+      setMessage("❌ Unexpected error during copy.");
+    }
+  };
   //Used to render folders,sorry frontend people if its confusing,I put it here because the return was looking too long(it is still long :( )
   const renderFolderTree = (parentId = null, depth = 0) => {
     return folders
@@ -345,6 +452,11 @@ function FileManager() {
                     >
                       🚚 Move
                 </button>
+                <button
+  onClick={() => handleCopy({ folderId: folder.id, destinationFolderId: copyTargetFolderId })}
+>
+  📁 Copy Folder
+</button>
           </div>
           <div className="ml-4">
             {files
@@ -366,6 +478,11 @@ function FileManager() {
                     >
                       🚚 Move
                 </button>
+                <button
+  onClick={() => handleCopy({ file, destinationFolderId: copyTargetFolderId })}
+>
+  📄 Copy File
+</button>
               </div>
               ))}
           </div>
