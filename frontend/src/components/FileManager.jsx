@@ -124,7 +124,7 @@ function FileManager() {
     const storagePath = `data/${file.name}`;
     const { error: uploadError } = await supabase.storage
       .from("archive")
-      .upload(storagePath, file);
+      .upload(storagePath, file,{ upsert: true });
 
     if (uploadError) {
       console.error("Upload error:", uploadError.message);
