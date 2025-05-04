@@ -32,6 +32,7 @@ function FileManager() {
   const [parentId, setParentId] = useState(null);
   const [file, setFile] = useState(null);
   const [fileMetadata, setFileMetadata] = useState("");
+  const [copyTargetFolderId, setCopyTargetFolderId] = useState(null);
   const [message, setMessage] = useState("");
 
   //when the page loads or the current folder changes, fetch the folders and files from the database
@@ -239,6 +240,80 @@ function FileManager() {
       setMessage("✅ Folder and all its contents deleted!");
     }
   };
+  const handleMove = async ({ file = null, folderId = null, destinationFolderId }) => {
+    if (!destinationFolderId) {
+      setMessage("❌ Destination folder is required.");
+      return;
+    }
+  
+    try {
+      if (file) {
+        //move a single file by updating folder_id
+        const { error } = await supabase
+          .from("files")
+          .update({ folder_id: destinationFolderId })
+          .eq("id", file.id);
+  
+        if (error) {
+          console.error("File move error:", error.message);
+          setMessage("❌ Failed to move file.");
+          return;
+        }
+  
+        setMessage(`✅ File '${file.filename}' moved successfully!`);
+        return;
+      }
+  
+      if (folderId) {
+        // move a folder and its entire hierarchy
+        const { data: allFolders } = await supabase.from("folders").select("*");
+  
+        const folderMap = {}; // oldFolderId → newFolderId
+  
+        // get all children
+        const getDescendants = (parentId) => {
+          const children = allFolders.filter(f => f.parent_id === parentId);
+          return children.flatMap(child => [child, ...getDescendants(child.id)]);
+        };
+  
+        const sourceFolder = allFolders.find(f => f.id === folderId);
+        if (!sourceFolder) {
+          setMessage("❌ Source folder not found.");
+          return;
+        }
+  
+        const descendantFolders = [sourceFolder, ...getDescendants(folderId)];
+  
+        // move folders — update each folder’s parent_id
+        for (const folder of descendantFolders) {
+          const newParentId =
+            folder.id === folderId
+              ? destinationFolderId
+              : folderMap[folder.parent_id];
+  
+          const { data, error } = await supabase
+            .from("folders")
+            .update({ parent_id: newParentId })
+            .eq("id", folder.id)
+            .select()
+            .single();
+  
+          if (error) {
+            console.error("Folder move error:", error.message);
+            setMessage("❌ Failed to move folder.");
+            return;
+          }
+  
+          folderMap[folder.id] = data.id;
+        }
+  
+        setMessage("✅ Folder and contents moved successfully!");
+      }
+    } catch (err) {
+      console.error("Unexpected move error:", err);
+      setMessage("❌ Unexpected error during move.");
+    }
+  };
   //Used to render folders,sorry frontend people if its confusing,I put it here because the return was looking too long(it is still long :( )
   const renderFolderTree = (parentId = null, depth = 0) => {
     return folders
@@ -263,6 +338,13 @@ function FileManager() {
               >
                 🗑️
               </button>
+              <button
+                      onClick={() =>handleMove({ folderId: folder.id, destinationFolderId: copyTargetFolderId })}
+                      className="text-yellow-400 hover:text-yellow-300 text-sm ml-2"
+                      title="Move folder to selected folder"
+                    >
+                      🚚 Move
+                </button>
           </div>
           <div className="ml-4">
             {files
@@ -276,6 +358,13 @@ function FileManager() {
                       title="Delete file"
                     >
                       🗑️
+                </button>
+                <button
+                      onClick={() => handleMove({ file, destinationFolderId: copyTargetFolderId })}
+                      className="text-yellow-400 hover:text-yellow-300 text-sm ml-2"
+                      title="Move file to selected folder"
+                    >
+                      🚚 Move
                 </button>
               </div>
               ))}
@@ -315,6 +404,19 @@ function FileManager() {
       </div>
 
       <div className="flex items-center gap-3">
+      <label className="text-white">Destination Folder:</label>
+        <select
+          value={copyTargetFolderId || ""}
+          onChange={(e) => setCopyTargetFolderId(e.target.value || null)}
+          className="bg-gray-700 text-white p-2 rounded border border-gray-600"
+        >
+        <option value="">-- Select Folder --</option>
+          {folders.map((folder) => (
+          <option key={folder.id} value={folder.id}>
+            {folder.name}
+        </option>
+       ))}
+        </select>
         <input
           type="text"
           placeholder="Folder name"
