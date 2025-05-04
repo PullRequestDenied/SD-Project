@@ -31,6 +31,7 @@ function FileManager() {
   const [folderName, setFolderName] = useState("");
   const [parentId, setParentId] = useState(null);
   const [file, setFile] = useState(null);
+  const [fileMetadata, setFileMetadata] = useState("");
   const [message, setMessage] = useState("");
 
   //when the page loads or the current folder changes, fetch the folders and files from the database
@@ -131,13 +132,26 @@ function FileManager() {
       setMessage(`❌ Upload failed: ${uploadError.message}`);
       return;
     }
+    let parsedMetadata = {};
+
+    if (fileMetadata.trim() !== "") {
+      const tagsArray = fileMetadata.split(",").map(tag => tag.trim()).filter(tag => tag.length > 0);
+      parsedMetadata = { Metadata: tagsArray };
+    }
+
+    try {
+      parsedMetadata = fileMetadata ? JSON.parse(fileMetadata) : {};
+    } catch (err) {
+      setMessage("❌ Metadata must be valid JSON.");
+      return;
+    }
     //insert file details into datbase
     const { error: dbError } = await supabase.from("files").insert({
       filename: file.name,
       path: filePath,
       type: file.type,
       size: file.size,
-      metadata: {},
+      metadata: parsedMetadata,
       uploaded_by: userId,
       folder_id: currentFolderId || null,
     });
@@ -227,6 +241,17 @@ function FileManager() {
       <div className="bg-gray-700 p-4 rounded border border-gray-600">
         {renderFolderTree()}
       </div>
+      <label htmlFor="metadata" className="text-white block mb-1">
+      Metadata:
+        </label>
+        <textarea
+        id="metadata"
+        value={fileMetadata}
+        onChange={(e) => setFileMetadata(e.target.value)}
+        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded mb-2"
+        placeholder='e.g. 1900,WW1,Poland,...,...'
+        rows={3}
+      />
 
       <div className="flex items-center gap-3">
         <input
