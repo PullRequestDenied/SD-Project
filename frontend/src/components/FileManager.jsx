@@ -121,10 +121,10 @@ function FileManager() {
     //getting path and uploading to archive
     const fullPath = buildFullPath();
     const filePath = fullPath ? `${fullPath}/${file.name}` : `${file.name}`;
-
+    const storagePath = `data/${file.name}`;
     const { error: uploadError } = await supabase.storage
       .from("archive")
-      .upload(filePath, file);
+      .upload(storagePath, file);
 
     if (uploadError) {
       console.error("Upload error:", uploadError.message);
