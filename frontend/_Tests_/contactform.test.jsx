@@ -37,4 +37,17 @@ describe('ContactForm (partial test)', () => {
     expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
     expect(await screen.findByText(/message is required/i)).toBeInTheDocument();
   });
+  it('shows validation errors when fields are empty', async () => {
+    render(
+      <MemoryRouter>
+        <ContactForm />
+      </MemoryRouter>
+    );
+  
+    fireEvent.click(screen.getByRole('button', { name: /send/i }));
+  
+    expect(await screen.findByText(/name is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/message is required/i)).toBeInTheDocument();
+  });
 });
