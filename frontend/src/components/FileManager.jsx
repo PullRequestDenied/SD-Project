@@ -157,7 +157,87 @@ function FileManager() {
     }
 
     setFile(null);
+    setFileMetadata("");
+
     setMessage("✅ File uploaded successfully!");
+  };
+  const handleDelete = async (folderId = null, fileId = null, filename = null) => {
+    if (fileId && filename) {
+      //deleting a single file
+      const storagePath = `data/${filename}`;
+  
+      const { error: storageError } = await supabase.storage
+        .from("archive")
+        .remove([storagePath]);
+  
+      if (storageError && storageError.message !== "Object not found") {
+        console.error("Storage deletion error:", storageError.message);
+        setMessage(`❌ Failed to delete file from storage: ${storageError.message}`);
+        return;
+      }
+  
+      const { error: dbError } = await supabase
+        .from("files")
+        .delete()
+        .eq("id", fileId);
+  
+      if (dbError) {
+        console.error("DB deletion error:", dbError.message);
+        setMessage("❌ Failed to delete file from database.");
+        return;
+      }
+  
+      setMessage("✅ File deleted successfully!");
+    }
+  
+    if (folderId) {
+      //deleting a folder everything inside it
+      //het all subfolders recursively
+      const allFolders = await supabase.from("folders").select("*");
+      const getSubfolderIds = (id) => {
+        const children = allFolders.data.filter(f => f.parent_id === id);
+        return children.reduce(
+          (acc, f) => [...acc, f.id, ...getSubfolderIds(f.id)],
+          []
+        );
+      };
+  
+      const folderIdsToDelete = [folderId, ...getSubfolderIds(folderId)];
+  
+      //get all files in folders
+      const { data: filesToDelete, error: fileQueryError } = await supabase
+        .from("files")
+        .select("*")
+        .in("folder_id", folderIdsToDelete);
+  
+      if (fileQueryError) {
+        console.error("Failed to fetch files for deletion:", fileQueryError.message);
+        setMessage("❌ Could not fetch files to delete.");
+        return;
+      }
+  
+      //delete files from archive
+      const storagePaths = filesToDelete.map((f) => `data/${f.filename}`);
+      if (storagePaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from("archive")
+          .remove(storagePaths);
+  
+        if (storageError) {
+          console.error("Storage bulk delete error:", storageError.message);
+          setMessage("❌ Failed to delete files from storage.");
+          return;
+        }
+      }
+  
+      //deleting files
+      await supabase.from("files").delete().in("id", filesToDelete.map(f => f.id));
+  
+      //deleting folders
+      await supabase.from("folders").delete().in("id", folderIdsToDelete);
+  
+      setMessage("✅ Folder and all its contents deleted!");
+    }
   };
   //Used to render folders,sorry frontend people if its confusing,I put it here because the return was looking too long(it is still long :( )
   const renderFolderTree = (parentId = null, depth = 0) => {
@@ -175,11 +255,29 @@ function FileManager() {
           >
             📁 {folder.name}
           </div>
+          <div className="flex items-center">
+              <button
+                onClick={() => handleDelete(folder.id)}
+                className="text-red-400 hover:text-red-300 text-sm ml-2"
+                title="Delete folder and its contents"
+              >
+                🗑️
+              </button>
+          </div>
           <div className="ml-4">
             {files
               .filter(file => file.folder_id === folder.id)
               .map(file => (
-                <div key={file.id} className="text-gray-300 ml-2">📄 {file.filename}</div>
+                <div key={file.id} className="flex items-center justify-between text-gray-300 ml-2">
+                📄 {file.filename}
+                <button
+                      onClick={() => handleDelete(null, file.id, file.filename)}
+                      className="text-red-400 hover:text-red-300 text-sm ml-2"
+                      title="Delete file"
+                    >
+                      🗑️
+                </button>
+              </div>
               ))}
           </div>
           {renderFolderTree(folder.id, depth + 1)}
