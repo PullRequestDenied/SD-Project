@@ -422,79 +422,89 @@ function FileManager() {
     }
   };
   //Used to render folders,sorry frontend people if its confusing,I put it here because the return was looking too long(it is still long :( )
-  const renderFolderTree = (parentId = null, depth = 0) => {
-    return folders
-      .filter(f => f.parent_id === parentId)
-      .map(folder => (
-        <div
-          key={folder.id}
-          className="border-l-2 border-gray-600 pl-3 ml-1 mb-2"
-          style={{ marginLeft: depth * 10 }}
-        >
+
+const renderFolderTree = (parentId = null, depth = 0) => {
+  return folders
+    .filter(f => f.parent_id === parentId)
+    .map(folder => (
+      <div
+        key={folder.id}
+        className="border-l-2 border-gray-600 pl-3 ml-1 mb-2"
+        style={{ marginLeft: depth * 10 }}
+      >
+        <div className="flex justify-between items-center">
           <div
             className="cursor-pointer text-blue-400 hover:underline font-medium"
             onClick={() => handleFolderClick(folder.id)}
           >
             📁 {folder.name}
           </div>
-          <div className="flex items-center">
-              <button
-                onClick={() => handleDelete(folder.id)}
-                className="text-red-400 hover:text-red-300 text-sm ml-2"
-                title="Delete folder and its contents"
-              >
-                🗑️
-              </button>
-              <button
-                      onClick={() =>handleMove({ folderId: folder.id, destinationFolderId: copyTargetFolderId })}
-                      className="text-yellow-400 hover:text-yellow-300 text-sm ml-2"
-                      title="Move folder to selected folder"
-                    >
-                      🚚 Move
-                </button>
-                <button
-  onClick={() => handleCopy({ folderId: folder.id, destinationFolderId: copyTargetFolderId })}
->
-  📁 Copy Folder
-</button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handleDelete(folder.id)}
+              className="text-red-400 hover:text-red-300 text-sm"
+              title="Delete folder and its contents"
+            >
+              🗑️
+            </button>
+            <button
+              onClick={() => handleMove({ folderId: folder.id, destinationFolderId: copyTargetFolderId })}
+              className="text-yellow-400 hover:text-yellow-300 text-sm"
+              title="Move folder to selected folder"
+            >
+              🚚
+            </button>
+            <button
+              onClick={() => handleCopy({ folderId: folder.id, destinationFolderId: copyTargetFolderId })}
+              className="text-green-400 hover:text-green-300 text-sm"
+              title="Copy folder to selected folder"
+            >
+              📁
+            </button>
           </div>
-          <div className="ml-4">
-            {files
-              .filter(file => file.folder_id === folder.id)
-              .map(file => (
-                <div key={file.id} className="flex items-center justify-between text-gray-300 ml-2">
-                📄 {file.filename}
-                <button
-                      onClick={() => handleDelete(null, file.id, file.filename)}
-                      className="text-red-400 hover:text-red-300 text-sm ml-2"
-                      title="Delete file"
-                    >
-                      🗑️
-                </button>
-                <button
-                      onClick={() => handleMove({ file, destinationFolderId: copyTargetFolderId })}
-                      className="text-yellow-400 hover:text-yellow-300 text-sm ml-2"
-                      title="Move file to selected folder"
-                    >
-                      🚚 Move
-                </button>
-                <button
-  onClick={() => handleCopy({ file, destinationFolderId: copyTargetFolderId })}
->
-  📄 Copy File
-</button>
-              </div>
-              ))}
-          </div>
-          {renderFolderTree(folder.id, depth + 1)}
         </div>
-      ));
-  };
-//normal stuff without semantic tags,sorry,there is some flex so somewhat confusing
-//its not perfect yet,to go back to root you have to click the breadcrumb trail.
+        <div className="ml-4">
+          {files
+            .filter(file => file.folder_id === folder.id)
+            .map(file => (
+              <div key={file.id} className="flex justify-between items-center text-gray-300 ml-2">
+                <span>📄 {file.filename}</span>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleDelete(null, file.id, file.filename)}
+                    className="text-red-400 hover:text-red-300 text-sm"
+                    title="Delete file"
+                  >
+                    🗑️
+                  </button>
+                  <button
+                    onClick={() => handleMove({ file, destinationFolderId: copyTargetFolderId })}
+                    className="text-yellow-400 hover:text-yellow-300 text-sm"
+                    title="Move file to selected folder"
+                  >
+                    🚚
+                  </button>
+                  <button
+                    onClick={() => handleCopy({ file, destinationFolderId: copyTargetFolderId })}
+                    className="text-green-400 hover:text-green-300 text-sm"
+                    title="Copy file to selected folder"
+                  >
+                    📄
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+        {renderFolderTree(folder.id, depth + 1)}
+      </div>
+    ));
+};
+
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gray-800 shadow-lg rounded-lg text-white space-y-6">
-      <h2 className="text-3xl font-bold border-b border-gray-700 pb-2 mb-4">📁 File Manager</h2>
+      <h2 className="text-3xl font-bold border-b border-gray-700 pb-2 mb-4">
+        📁 File Manager
+      </h2>
 
       <div className="text-sm text-blue-400 space-x-1 flex flex-wrap items-center">
         <span
@@ -502,7 +512,6 @@ function FileManager() {
           onClick={() => {
             setCurrentFolderId(null);
             setBreadcrumbTrail([]);
-            setParentId(null);
           }}
         >
           Root
@@ -521,18 +530,18 @@ function FileManager() {
       </div>
 
       <div className="flex items-center gap-3">
-      <label className="text-white">Destination Folder:</label>
+        <label className="text-white">Destination Folder:</label>
         <select
           value={copyTargetFolderId || ""}
           onChange={(e) => setCopyTargetFolderId(e.target.value || null)}
           className="bg-gray-700 text-white p-2 rounded border border-gray-600"
         >
-        <option value="">-- Select Folder --</option>
+          <option value="">-- Select Folder --</option>
           {folders.map((folder) => (
-          <option key={folder.id} value={folder.id}>
-            {folder.name}
-        </option>
-       ))}
+            <option key={folder.id} value={folder.id}>
+              {folder.name}
+            </option>
+          ))}
         </select>
         <input
           type="text"
@@ -552,10 +561,11 @@ function FileManager() {
       <div className="bg-gray-700 p-4 rounded border border-gray-600">
         {renderFolderTree()}
       </div>
+
       <label htmlFor="metadata" className="text-white block mb-1">
-      Metadata:
-        </label>
-        <textarea
+        Metadata:
+      </label>
+      <textarea
         id="metadata"
         value={fileMetadata}
         onChange={(e) => setFileMetadata(e.target.value)}
@@ -587,5 +597,4 @@ function FileManager() {
     </div>
   );
 }
-
 export default FileManager;
