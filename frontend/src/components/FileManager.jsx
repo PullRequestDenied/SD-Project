@@ -468,7 +468,7 @@ const renderFolderTree = (parentId = null, depth = 0) => {
             .filter(file => file.folder_id === folder.id)
             .map(file => (
               <div key={file.id} className="flex justify-between items-center text-gray-300 ml-2">
-                <span>📄 {file.filename}</span>
+                <span data-testid="file-name">📄 {file.filename}</span>
                 <div className="flex items-center space-x-2">
                   <button 
                     onClick={() => handleDelete(null, file.id, file.filename)}
