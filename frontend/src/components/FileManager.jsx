@@ -96,16 +96,6 @@ function FileManager() {
     //builds path and adds .keep so the folder is created in archive
     const fullPath = buildFullPath();
     const folderPath = fullPath ? `${fullPath}/${folderName}/.keep` : `${folderName}/.keep`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("archive")
-      .upload(folderPath, new Blob([""], { type: "text/plain" }));
-    //for preventing duplication ,added on my own not sure if it is needed
-    if (uploadError && uploadError.message !== "The resource already exists") {
-      console.error("Storage error:", uploadError.message);
-      setMessage("❌ Failed to create folder in storage.");
-      return;
-    }
     //insert folder details into database
     const { error: dbError } = await supabase.from("folders").insert({
       name: folderName,
