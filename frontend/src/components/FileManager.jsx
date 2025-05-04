@@ -139,12 +139,6 @@ function FileManager() {
       parsedMetadata = { Metadata: tagsArray };
     }
 
-    try {
-      parsedMetadata = fileMetadata ? JSON.parse(fileMetadata) : {};
-    } catch (err) {
-      setMessage("❌ Metadata must be valid JSON.");
-      return;
-    }
     //insert file details into datbase
     const { error: dbError } = await supabase.from("files").insert({
       filename: file.name,
