@@ -1,21 +1,24 @@
-import React from 'react'
+import React, {useState} from 'react'
 import { UserAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import FileManager from './FileManager';
+import { useDarkMode } from '../context/DarkModeContext';
 
 const Dashboard = () => {
-  const {session, signOut} = UserAuth();
+  const { session, signOut } = UserAuth();
   const navigate = useNavigate();
+  const { darkMode } = useDarkMode();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleSignOut = async (e) => {
     e.preventDefault();
-    try{
+    try {
       await signOut();
       navigate('/signin');
-    }catch(err){
+    } catch (err) {
       console.error("Error signing out:", err.message);
-    } 
-  }
+    }
+  };
 
   return (
     <div>
@@ -36,4 +39,4 @@ const Dashboard = () => {
   )
 }
 
-export default Dashboard
+export default Dashboard;
