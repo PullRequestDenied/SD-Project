@@ -12,6 +12,8 @@ const Signin = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [wrongPassword, setWrongPassword] = useState(0);
+    const [resetPassword, setResetPassword] = useState(false);
 
     const {signInUser} = UserAuth();
     const navigate = useNavigate();
@@ -26,6 +28,11 @@ const Signin = () => {
                 navigate('/Dashboard');
             } else {
                 setError(result.error.message);
+                setWrongPassword(prev => prev + 1);
+                if (wrongPassword >= 2) {
+                    setError('Too many failed attempts. ');
+                    setResetPassword(true);
+                }
             }
         } catch (error) {
             setError('An error occurred during sign up. Please try again.');
@@ -58,8 +65,26 @@ const Signin = () => {
           >
             <h2 className="text-2xl font-bold mb-6 text-center">Sign In</h2>
     
-            {error && (
+            {!resetPassword && error && (
               <p className="text-red-500 text-sm text-center mb-4">{error}</p>
+            )}
+
+            {resetPassword && (
+              <div>
+                <p className="text-sm text-center mb-4">
+                Forgot your password?
+                <Link
+                  to="/forgotpassword"
+                  className={`underline transition ${
+                    darkMode
+                      ? 'text-indigo-300 hover:text-indigo-200'
+                      : 'text-indigo-600 hover:text-indigo-800'
+                  }`}
+                >
+                  {" Reset Password"}
+                </Link>
+              </p>
+              </div>
             )}
     
             <form onSubmit={handleSignIn} className="space-y-4">
