@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { UserAuth } from '../context/AuthContext';
 import { Menu, Moon, Sun, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BlurText from '../assets/BlurText';
@@ -8,13 +9,28 @@ import { useDarkMode } from '../context/DarkModeContext';
 
 
 
+
 export default function LandingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { darkMode, toggleDarkMode } = useDarkMode();
-  console.log('LandingPage darkMode:', darkMode);
-  useEffect(() => {
-    console.log("LANDING PAGE sees darkMode:", darkMode);
-  }, [darkMode]);
+  const { session, signOut } = UserAuth();
+  const user = session?.user;
+  
+  // console.log('LandingPage darkMode:', darkMode);
+  // useEffect(() => {
+  //   console.log("LANDING PAGE sees darkMode:", darkMode);
+  // }, [darkMode]);
+
+  const handleSignOut = async (e) => {
+    e.preventDefault();
+    try {
+      await signOut();
+      navigate('/signin');
+    } catch (err) {
+      console.error('Error signing out:', err.message);
+    }
+  };
+
 
   return (
 
@@ -89,17 +105,36 @@ export default function LandingPage() {
         <footer className="space-y-2">
 
 
-          <Link to="/signup" className="w-full block">
-          <button className="w-full text-sm  hover:!border-cyan-600  py-2 rounded-md transition text-white dark:text-white">
+    {user ? (
+      <>
+        <Link to="/dashboard" className="w-full block">
+          <button className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
+            {sidebarOpen ? 'Dashboard' : '📂'}
+          </button>
+        </Link>
+
+        <button
+          onClick={handleSignOut}
+          className="w-full text-sm hover:!border-red-600 py-2 rounded-md transition text-white dark:text-white"
+        >
+          {sidebarOpen ? 'Sign Out' : '🚪'}
+        </button>
+      </>
+    ) : (
+      <>
+        <Link to="/signup" className="w-full block">
+          <button className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
             {sidebarOpen ? 'Sign Up' : '✍️'}
           </button>
-          </Link>
-
-          <Link to="/signin" className="w-full block">
-          <button className="w-full text-sm  hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
+        </Link>
+        <Link to="/signin" className="w-full block">
+          <button className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
             {sidebarOpen ? 'Log in' : '🔑'}
           </button>
-          </Link>
+        </Link>
+      </>
+    )}
+
           <Link to="/privacypolicy" className="w-full block">
           {sidebarOpen && (
           <button className="w-full text-sm py-2 rounded-md transition text-white dark:text-white">
