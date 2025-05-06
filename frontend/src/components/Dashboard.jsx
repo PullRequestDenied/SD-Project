@@ -1,7 +1,8 @@
-import React from 'react'
+import React, {useState} from 'react'
 import { UserAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import FileManager from './FileManager';
+import { useDarkMode } from '../context/DarkModeContext';
 
 const Dashboard = () => {
   const { session, signOut } = UserAuth();
