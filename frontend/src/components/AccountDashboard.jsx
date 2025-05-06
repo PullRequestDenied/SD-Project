@@ -1,6 +1,7 @@
 import React from 'react'
 import { useDarkMode } from '../context/DarkModeContext';
 import AccountInfoComponent from './AccountInfoComponent';
+import ChangePasswordComponent from './ChangePasswordComponent';
 
 const AccountDashboard = () => {
 
@@ -11,6 +12,7 @@ const AccountDashboard = () => {
         <h2 className="text-4xl font-bold text-gray-800 dark:text-white">Account Information</h2>
         <p className="my-4 text-lg text-gray-600 dark:text-gray-300">Here you can view and manage your account details.</p>
         <AccountInfoComponent />
+        <ChangePasswordComponent />
     </main>
   )
 }
