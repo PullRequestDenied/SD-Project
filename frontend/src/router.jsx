@@ -21,5 +21,5 @@ export const router = createBrowserRouter([
     {path: "/forgotpassword", element: <ForgotPassword /> },
     {path: "/resetpassword", element: <AuthenticatedRoute> <ResetPassword /> </AuthenticatedRoute>},
     {path: "/search", element: <SearchPage /> },
-    {path: "/account", element: <AccountDashboard /> },
+    {path: "/account", element: <AuthenticatedRoute> <AccountDashboard /> </AuthenticatedRoute> },
 ]);
