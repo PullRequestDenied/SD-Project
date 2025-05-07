@@ -37,7 +37,7 @@ const AccountInfoComponent = () => {
   return (
     
     <section className='flex justify-center transition-colors'>
-        <div className={`relative z-10 w-full max-w-md px-6 py-12 rounded-md transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
+        <div className={`relative z-10 w-xl px-6 py-12 rounded-md transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
                   darkMode
                   ? 'bg-gray-800 border-gray-700 '
                   : 'bg-white border-gray-200 '

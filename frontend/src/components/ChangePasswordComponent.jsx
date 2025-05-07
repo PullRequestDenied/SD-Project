@@ -45,7 +45,7 @@ const ChangePasswordComponent = () => {
         darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
       }`}>
         <section
-            className={`relative z-10 w-full max-w-md px-6 py-12 shadow-lg rounded-md transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
+            className={`relative z-10 w-xl px-6 py-12 shadow-lg rounded-md transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
               darkMode
                 ? 'bg-gray-800 border-gray-700 hover:border-indigo-500'
                 : 'bg-white border-gray-200 hover:border-indigo-400'
