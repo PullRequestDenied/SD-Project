@@ -14,7 +14,7 @@ const PrivateRoute = ({children}) => {
 
   return (
     <>
-      {userRole === 'admin' ? <>{children}</> : <Navigate to="/"/>}
+      {userRole === 'admin' | userRole === 'moderator' ? <>{children}</> : <Navigate to="/"/>}
     </>
   )
 }
