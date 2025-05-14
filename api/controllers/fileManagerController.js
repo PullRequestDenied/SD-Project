@@ -13,17 +13,54 @@ exports.readFiles = async (req, res) => {
 };
 
 exports.uploadFile = async (req, res) => {
-  const file = req.file;
-  const fullPath = req.body.path ? `${req.body.path}/${file.originalname}` : file.originalname;
+  try {
+    const file = req.file;
+    const folderPath = req.body.path || "";
+    const folderId = req.body.folderId || null; // optional
+    const uploadedBy = req.body.uploadedBy || null; // optional
+    const metadataRaw = req.body.metadata || ""; // optional
 
-  const { error } = await supabase.storage.from(bucket).upload(fullPath, file.buffer, {
+    if (!file) {
+      return res.status(400).json({ error: "No file provided." });
+    }
+
+    const fullPath = folderPath ? `${folderPath}/${file.originalname}` : file.originalname;
+  const { error:storageError } = await supabase.storage.from(bucket).upload(fullPath, file.buffer, {
     contentType: file.mimetype,
     upsert: true,
   });
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (storageError){
+    console.error("Upload error:", storageError.message);
+    return res.status(500).json({ error: storageError.message });
+  } 
 
   res.json({ message: "Upload successful" });
+    let parsedMetadata = {};
+    if (metadataRaw.trim()) {
+      parsedMetadata = metadataRaw
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+    }
+        const { error: dbError } = await supabase.from("files").insert({
+      filename: file.originalname,
+      path: fullPath,
+      type: file.mimetype,
+      size: file.size,
+      metadata: parsedMetadata,
+      folder_id: folderId,
+      uploaded_by: uploadedBy
+    });
+        if (dbError) {
+      console.error("DB insert error:", dbError.message);
+      return res.status(500).json({ error: dbError.message });
+    }
+        res.json({ message: "File uploaded and saved in database." });
+  } catch (err) {
+    console.error("Unexpected upload error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 exports.deleteFile = async (req, res) => {
   try {
@@ -172,26 +209,35 @@ exports.deleteFolder = async (req, res) => {
   }
 };
 exports.createFolder = async (req, res) => {
-  const { folderPath } = req.body;
+  const { folderPath,folderName,parentId,createdBy } = req.body;
 
-  if (!folderPath) {
-    return res.status(400).json({ error: "Missing folderPath." });
+  if (!folderPath || !folderName) {
+    return res.status(400).json({ error: "Missing folderPathcor folderName" });
   }
 
-  const folderKey = `${folderPath}/.keep`;
+  const keepFilePath = `${folderPath}/.keep`;
 
   try {
-    const { error } = await supabase.storage
+    const { error: storageError } = await supabase.storage
       .from(bucket)
-      .upload(folderKey, Buffer.from("placeholder"), {
+      .upload(keepFilePath, Buffer.from("placeholder"), {
         contentType: "text/plain",
         upsert: false
       });
 
-    if (error) {
-      console.error("Create folder error:", error.message);
-      return res.status(500).json({ error: error.message });
+    if (storageError) {
+      console.error("Create folder error:", storageError.message);
+      return res.status(500).json({ error: storageError.message });
     }
+    const {error: dbError} = await supabase.from("folders").insert({
+        name: folderName,
+        parent_id:parentId || null,
+        created_by:createdBy || null,
+    });
+    if (dbError) {
+        console.error("Database error:", dbError.message);
+        return res.status(500).json({ error: dbError.message });
+      }
 
     res.json({ message: `Folder '${folderPath}' created.` });
   } catch (err) {
