@@ -3,6 +3,37 @@ const { createClient } = require("@supabase/supabase-js");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const bucket = process.env.SUPABASE_BUCKET;
 
+async function listAllFilesRecursively(folderPath) {
+  let files = [];
+  const stack = [folderPath];
+
+  while (stack.length) {
+    const currentPath = stack.pop();
+    const { data, error } = await supabase
+      .storage
+      .from(bucket)
+      .list(currentPath, { limit: 1000 });
+
+    if (error) {
+      throw new Error(`Error listing ${currentPath}: ${error.message}`);
+    }
+
+    for (const item of data) {
+      if (item.name.endsWith("/")) {
+        // In theory, subfolders would end with "/", but Supabase returns folders as items with `item.metadata` null
+        stack.push(`${currentPath}/${item.name}`);
+      } else if (!item.metadata) {
+        // This is a folder
+        stack.push(`${currentPath}/${item.name}`);
+      } else {
+        files.push(`${currentPath}/${item.name}`);
+      }
+    }
+  }
+
+  return files;
+}
+
 exports.readFiles = async (req, res) => {
   const { path = "" } = req.body;
   const { data, error } = await supabase.storage.from(bucket).list(path);
@@ -168,30 +199,18 @@ exports.copyItem = async (req, res) => {
 };
 exports.deleteFolder = async (req, res) => {
   const { folderPath } = req.body;
+  const {folderId} = req.body;
 
   if (!folderPath) {
     return res.status(400).json({ error: "Missing folderPath." });
   }
 
   try {
-    // Step 1: List all files under the folder
-    const { data, error: listError } = await supabase
-      .storage
-      .from(bucket)
-      .list(folderPath, { limit: 1000, offset: 0, search: "" });
-
-    if (listError) {
-      console.error("List error:", listError.message);
-      return res.status(500).json({ error: listError.message });
-    }
-
-    const filePaths = data.map(f => `${folderPath}/${f.name}`);
-
+    const filePaths = await listAllFilesRecursively(folderPath);
+    console.log(filePaths);
     if (filePaths.length === 0) {
       return res.status(404).json({ error: "No files found in folder." });
     }
-
-    // Step 2: Delete all those files
     const { error: deleteError } = await supabase
       .storage
       .from(bucket)
@@ -200,6 +219,50 @@ exports.deleteFolder = async (req, res) => {
     if (deleteError) {
       console.error("Delete error:", deleteError.message);
       return res.status(500).json({ error: deleteError.message });
+    }
+    
+    if (!folderId) {
+      console.warn("No folderId provided — skipping database cleanup.");
+    } else {
+      // 1. Fetch all folders
+      const { data: allFolders, error: folderListError } = await supabase
+        .from("folders")
+        .select("*");
+
+      if (folderListError) {
+        console.error("Failed to fetch folders for DB cleanup:", folderListError.message);
+        return res.status(500).json({ error: folderListError.message });
+      }
+
+      // 2. Recursively collect all descendant folder IDs
+      const getDescendantIds = (id) => {
+        const children = allFolders.filter(f => f.parent_id === id);
+        return children.flatMap(child => [child.id, ...getDescendantIds(child.id)]);
+      };
+
+      const folderIdsToDelete = [folderId, ...getDescendantIds(folderId)];
+
+      // 3. Delete files from DB
+      const { error: fileDeleteError } = await supabase
+        .from("files")
+        .delete()
+        .in("folder_id", folderIdsToDelete);
+
+      if (fileDeleteError) {
+        console.error("File DB delete error:", fileDeleteError.message);
+        return res.status(500).json({ error: fileDeleteError.message });
+      }
+
+      // 4. Delete folders from DB
+      const { error: folderDeleteError } = await supabase
+        .from("folders")
+        .delete()
+        .in("id", folderIdsToDelete);
+
+      if (folderDeleteError) {
+        console.error("Folder DB delete error:", folderDeleteError.message);
+        return res.status(500).json({ error: folderDeleteError.message });
+      }
     }
 
     res.json({ message: `Deleted folder '${folderPath}' and its contents.` });
@@ -301,7 +364,7 @@ exports.renameFolder = async (req, res) => {
   }
 
   try {
-    // Step 1: List all files in the old folder
+
     const { data, error: listError } = await supabase
       .storage
       .from(bucket)
