@@ -199,3 +199,51 @@ exports.createFolder = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+exports.renameItem = async (req, res) => {
+  const { fromPath, toPath } = req.body;
+
+  if (!fromPath || !toPath) {
+    return res.status(400).json({ error: "Missing fromPath or toPath." });
+  }
+
+  try {
+    const { data: fileData, error: downloadError } = await supabase
+      .storage
+      .from(bucket)
+      .download(fromPath);
+
+    if (downloadError || !fileData) {
+      console.error("Rename download error:", downloadError);
+      return res.status(500).json({ error: "Download failed." });
+    }
+
+    const buffer = await fileData.arrayBuffer();
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from(bucket)
+      .upload(toPath, Buffer.from(buffer), {
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error("Rename upload error:", uploadError.message);
+      return res.status(500).json({ error: uploadError.message });
+    }
+
+    const { error: deleteError } = await supabase
+      .storage
+      .from(bucket)
+      .remove([fromPath]);
+
+    if (deleteError) {
+      console.error("Rename delete error:", deleteError.message);
+      return res.status(500).json({ error: deleteError.message });
+    }
+
+    res.json({ message: `Renamed '${fromPath}' → '${toPath}'` });
+  } catch (err) {
+    console.error("Unexpected rename error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

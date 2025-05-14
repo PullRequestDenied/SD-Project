@@ -11,7 +11,8 @@ const {
   moveItem, 
   copyItem,
   deleteFolder,
-  createFolder 
+  createFolder,
+  renameItem 
 } = require("../controllers/fileManagerController");
 
 router.post("/", readFiles);
@@ -21,6 +22,6 @@ router.post("/move", moveItem);
 router.post("/copy", copyItem);
 router.post("/delete-folder", deleteFolder);
 router.post("/create-folder", createFolder);
-
+router.post("/rename", renameItem);
 
 module.exports = router;
