@@ -46,3 +46,86 @@ exports.deleteFile = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+exports.moveItem = async (req, res) => {
+  const { fromPath, toPath } = req.body;
+
+  if (!fromPath || !toPath) {
+    return res.status(400).json({ error: "Missing fromPath or toPath." });
+  }
+
+  try {
+    const { data: fileData, error: downloadError } = await supabase
+      .storage
+      .from(bucket)
+      .download(fromPath);
+
+    if (downloadError) {
+      console.error("Download error during move:", downloadError.message);
+      return res.status(500).json({ error: downloadError.message });
+    }
+
+    const buffer = await fileData.arrayBuffer();
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from(bucket)
+      .upload(toPath, Buffer.from(buffer), { upsert: true });
+
+    if (uploadError) {
+      console.error("Upload error during move:", uploadError.message);
+      return res.status(500).json({ error: uploadError.message });
+    }
+
+    const { error: deleteError } = await supabase
+      .storage
+      .from(bucket)
+      .remove([fromPath]);
+
+    if (deleteError) {
+      console.error("Delete error during move:", deleteError.message);
+      return res.status(500).json({ error: deleteError.message });
+    }
+
+    res.json({ message: `Moved from ${fromPath} to ${toPath}` });
+  } catch (err) {
+    console.error("Unexpected move error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.copyItem = async (req, res) => {
+  const { fromPath, toPath } = req.body;
+
+  if (!fromPath || !toPath) {
+    return res.status(400).json({ error: "Missing fromPath or toPath." });
+  }
+
+  try {
+    const { data: fileData, error: downloadError } = await supabase
+      .storage
+      .from(bucket)
+      .download(fromPath);
+
+    if (downloadError) {
+      console.error("Download error during copy:", downloadError.message);
+      return res.status(500).json({ error: downloadError.message });
+    }
+
+    const buffer = await fileData.arrayBuffer();
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from(bucket)
+      .upload(toPath, Buffer.from(buffer), { upsert: true });
+
+    if (uploadError) {
+      console.error("Upload error during copy:", uploadError.message);
+      return res.status(500).json({ error: uploadError.message });
+    }
+
+    res.json({ message: `Copied from ${fromPath} to ${toPath}` });
+  } catch (err) {
+    console.error("Unexpected copy error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
