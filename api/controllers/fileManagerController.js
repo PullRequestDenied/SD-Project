@@ -129,3 +129,73 @@ exports.copyItem = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+exports.deleteFolder = async (req, res) => {
+  const { folderPath } = req.body;
+
+  if (!folderPath) {
+    return res.status(400).json({ error: "Missing folderPath." });
+  }
+
+  try {
+    // Step 1: List all files under the folder
+    const { data, error: listError } = await supabase
+      .storage
+      .from(bucket)
+      .list(folderPath, { limit: 1000, offset: 0, search: "" });
+
+    if (listError) {
+      console.error("List error:", listError.message);
+      return res.status(500).json({ error: listError.message });
+    }
+
+    const filePaths = data.map(f => `${folderPath}/${f.name}`);
+
+    if (filePaths.length === 0) {
+      return res.status(404).json({ error: "No files found in folder." });
+    }
+
+    // Step 2: Delete all those files
+    const { error: deleteError } = await supabase
+      .storage
+      .from(bucket)
+      .remove(filePaths);
+
+    if (deleteError) {
+      console.error("Delete error:", deleteError.message);
+      return res.status(500).json({ error: deleteError.message });
+    }
+
+    res.json({ message: `Deleted folder '${folderPath}' and its contents.` });
+  } catch (err) {
+    console.error("Unexpected deleteFolder error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+exports.createFolder = async (req, res) => {
+  const { folderPath } = req.body;
+
+  if (!folderPath) {
+    return res.status(400).json({ error: "Missing folderPath." });
+  }
+
+  const folderKey = `${folderPath}/.keep`;
+
+  try {
+    const { error } = await supabase.storage
+      .from(bucket)
+      .upload(folderKey, Buffer.from("placeholder"), {
+        contentType: "text/plain",
+        upsert: false
+      });
+
+    if (error) {
+      console.error("Create folder error:", error.message);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ message: `Folder '${folderPath}' created.` });
+  } catch (err) {
+    console.error("Unexpected createFolder error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
