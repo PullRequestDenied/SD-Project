@@ -3,6 +3,7 @@ import { UserAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import FileManager from './FileManager';
 import { useDarkMode } from '../context/DarkModeContext';
+import { supabase } from '../supabaseClient';
 
 const Dashboard = () => {
   const { session, signOut } = UserAuth();
