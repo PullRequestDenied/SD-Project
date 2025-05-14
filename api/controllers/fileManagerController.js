@@ -247,3 +247,82 @@ exports.renameItem = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+exports.renameFolder = async (req, res) => {
+  const { fromFolder, toFolder } = req.body;
+
+  if (!fromFolder || !toFolder) {
+    return res.status(400).json({ error: "Missing fromFolder or toFolder." });
+  }
+
+  try {
+    // Step 1: List all files in the old folder
+    const { data, error: listError } = await supabase
+      .storage
+      .from(bucket)
+      .list(fromFolder, { limit: 1000 });
+
+    if (listError) {
+      console.error("List error:", listError.message);
+      return res.status(500).json({ error: listError.message });
+    }
+
+    if (!data.length) {
+      return res.status(404).json({ error: "Folder is empty or doesn't exist." });
+    }
+
+    const failed = [];
+
+    for (const file of data) {
+      const fromPath = `${fromFolder}/${file.name}`;
+      const toPath = `${toFolder}/${file.name}`;
+
+      // Download original
+      const { data: fileData, error: downloadError } = await supabase
+        .storage
+        .from(bucket)
+        .download(fromPath);
+
+      if (downloadError || !fileData) {
+        console.error(`Failed to download ${fromPath}`, downloadError);
+        failed.push(file.name);
+        continue;
+      }
+
+      const buffer = await fileData.arrayBuffer();
+
+      // Upload to new location
+      const { error: uploadError } = await supabase
+        .storage
+        .from(bucket)
+        .upload(toPath, Buffer.from(buffer), {
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error(`Failed to upload to ${toPath}`, uploadError);
+        failed.push(file.name);
+        continue;
+      }
+
+      // Delete old file
+      const { error: deleteError } = await supabase
+        .storage
+        .from(bucket)
+        .remove([fromPath]);
+
+      if (deleteError) {
+        console.error(`Failed to delete ${fromPath}`, deleteError);
+        failed.push(file.name);
+      }
+    }
+
+    if (failed.length > 0) {
+      return res.status(207).json({ message: "Some files failed to rename", failed });
+    }
+
+    res.json({ message: `Renamed folder '${fromFolder}' to '${toFolder}'` });
+  } catch (err) {
+    console.error("Unexpected renameFolder error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
