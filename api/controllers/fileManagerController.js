@@ -25,3 +25,24 @@ exports.uploadFile = async (req, res) => {
 
   res.json({ message: "Upload successful" });
 };
+exports.deleteFile = async (req, res) => {
+  try {
+    const { path } = req.body;
+
+    if (!path) {
+      return res.status(400).json({ error: "Missing 'path' in request body." });
+    }
+
+    const { error } = await supabase.storage.from(bucket).remove([path]);
+
+    if (error) {
+      console.error("Delete error:", error.message);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ message: "File deleted successfully." });
+  } catch (err) {
+    console.error("Unexpected delete error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
