@@ -11,6 +11,7 @@ import ResetPassword from "./components/ResetPassword";
 import AuthenticatedRoute from "./components/AuthenticatedRoute";
 import SearchPage from "./components/SearchPage"
 import AdminManager from './components/AdminManager';
+import AdminApplication from "./components/AdminApplication";
 export const router = createBrowserRouter([
     {path: "/", element: <App />},
     {path: "/signup", element: <Signup />},
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
     {path: "/forgotpassword", element: <ForgotPassword /> },
     {path: "/resetpassword", element: <AuthenticatedRoute> <ResetPassword /> </AuthenticatedRoute>},
     {path: "/search", element: <SearchPage /> },
-    { path: '/admin-manager', element: <AdminManager /> }
+    { path: '/admin-manager', element: <AdminManager /> },
+    {path: "/adminapplication", element: <AdminApplication /> }
 
 ]);
