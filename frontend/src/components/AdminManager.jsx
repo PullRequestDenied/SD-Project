@@ -104,7 +104,7 @@ const AdminManager = () => {
     <div className="max-w-7xl mx-auto px-6 py-10">
       {/* Page Header */}
       <header className="mb-10">
-        <h1 className="text-4xl font-bold text-white mb-2">Admin Panel</h1>
+        <h1 className="text-4xl font-bold text-white mb-2">Admin Manager</h1>
         <p className="text-gray-400 text-sm">
           Manage administrator privileges. Promote or demote users with a single click.
         </p>
