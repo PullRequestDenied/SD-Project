@@ -5,7 +5,6 @@ import { UserAuth } from '../context/AuthContext';
 const AccountInfoComponent = () => {
 
     const { darkMode, toggleDarkMode } = useDarkMode();
-    const [loading, setLoading] = React.useState(false);
     const [email, setEmail] = React.useState("");
     const [username, setUsername] = React.useState("");
     const [edit, setEdit] = React.useState(false);

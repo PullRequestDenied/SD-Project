@@ -41,7 +41,7 @@ const ChangePasswordComponent = () => {
     }
 
   return (
-    <section className={`flex justify-center transition-colors duration-300 mt-6 ${
+    <section className={`flex justify-center transition-colors duration-300 mt-6 mb-6${
         darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
       }`}>
         <section
