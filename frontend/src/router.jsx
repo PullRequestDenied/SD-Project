@@ -23,4 +23,7 @@ export const router = createBrowserRouter([
     {path: "/forgotpassword", element: <ForgotPassword /> },
     {path: "/resetpassword", element: <AuthenticatedRoute> <ResetPassword /> </AuthenticatedRoute>},
     {path: "/search", element: <SearchPage /> },
+    { path: '/admin-manager', element: <AdminManager /> },
+    {path: "/adminapplication", element: <AdminApplication /> },
+    {path: "/account", element: <AuthenticatedRoute> <AccountDashboard /> </AuthenticatedRoute> },
 ]);
