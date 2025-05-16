@@ -92,8 +92,20 @@ export const AuthContextProvider = ({ children }) => {
         return {success: true, data};
     };
 
+    //Signin with github
+    const signInWithGithub = async () => {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'github',
+        })
+        if (error) {
+            console.error("Error signing in with GitHub:", error.message);
+            return {success: false, error};
+        }
+        return {success: true, data};
+    }
+
     return (
-        <AuthContext.Provider value={{ session,loading, signUpNewUser, signOut, signInUser, requestReset, changePassword, updateUsernameAndEmail }}>
+        <AuthContext.Provider value={{ session,loading, signUpNewUser, signOut, signInUser, requestReset, changePassword, updateUsernameAndEmail, signInWithGithub }}>
             {children}
         </AuthContext.Provider>
     );
