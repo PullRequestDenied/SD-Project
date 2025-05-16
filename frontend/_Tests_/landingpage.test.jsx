@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import LandingPage from '../src/components/LandingPage';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
+import { UserAuth } from '../src/context/AuthContext';
 
 // ✅ Mocks
 vi.mock('../src/assets/BlurText', () => ({
@@ -29,17 +30,28 @@ vi.mock('../src/context/DarkModeContext', () => {
   };
 });
 
+vi.mock('../src/context/AuthContext', () => ({
+    UserAuth: vi.fn()
+  }));
+
 describe('LandingPage component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders the page with sidebar and content', () => {
+    UserAuth.mockReturnValue({
+          session: {
+            access_token: 'mock-token'
+          },
+          loading: false
+        });
+    
     render(
       <MemoryRouter>
         <LandingPage />
       </MemoryRouter>
-    );
+    ); 
 
     expect(screen.getByText(/What would you like to explore/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
