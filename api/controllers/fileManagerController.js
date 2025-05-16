@@ -4,17 +4,6 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const bucket = process.env.SUPABASE_BUCKET;
 const BUCKET_ROOT  = "data"; 
 /*Helper functions*/
-async function listFilesInSubtree(folderId) {
-  // 1) get all folder IDs: the root + its descendants
-  const descendantIds = await getDescendantFolderIds(folderId);
-  const allFolderIds  = [folderId, ...descendantIds];
-
-  // 2) fetch files for those folder IDs
-  const files = await getFilesInFolders(allFolderIds);
-  
-  // 3) return just the storage paths
-  return files.map(f => f.path);
-}
 async function getFolder(folderId) {
   return supabase
     .from("folders")
@@ -122,23 +111,131 @@ async function updateFolderName(folderId, name) {
     .eq("id", folderId);
   if (error) throw error;
 }
+async function mapPathToFolderId(pathStr) {
+  const segments = pathStr ? pathStr.split('/') : [];
+  let parentId = null;
+
+  for (const segment of segments) {
+    let query = supabase
+      .from('folders')
+      .select('id')
+      .eq('name', segment);
+
+    if (parentId === null) {
+      query = query.is('parent_id', null);    // SQL: parent_id IS NULL
+    } else {
+      query = query.eq('parent_id', parentId); // SQL: parent_id = '<uuid>'
+    }
+
+    const { data, error } = await query.single();
+    if (error || !data) return null;
+    parentId = data.id;
+  }
+
+  return parentId;
+}
 /*Helper functions*/
 exports.readFiles = async (req, res) => {
-  const { path = "" } = req.body;
-  const { data, error } = await supabase.storage.from(bucket).list(path);
+  try {
+    console.log('READ Path:', req.body.path);
+    const rawPath = (req.body.path || '').replace(/^\/+|\/+$/g, '');
+    const folderId =
+      rawPath === ''
+      ? null                  
+      : await mapPathToFolderId(rawPath);
+    console.log('READ folderId:', folderId);
+    // 1) Fetch subfolders
+let folderQuery = supabase
+  .from('folders')
+  .select('id, name,parent_id,created_at,created_by');
 
-  if (error) return res.status(500).json({ error: error.message });
+if (folderId === null) {
+  folderQuery = folderQuery.is('parent_id', null); 
+} else {
+  folderQuery = folderQuery.eq('parent_id', folderId);
+}
 
-  res.json({ files: data });
+const { data: folders, error: fErr } = await folderQuery;
+
+
+    let fileQuery = supabase
+        .from('files')
+        .select('id,filename,path,type,size,created_at,metadata,folder_id,uploaded_by');
+    if (folderId === null) {
+        fileQuery = fileQuery.is('folder_id', null);    
+    } else {
+        fileQuery = fileQuery.eq('folder_id', folderId);
+    }
+    const { data: files, error: fiErr } = await fileQuery;
+    if (fiErr) throw fiErr;
+
+
+    const cwdName = rawPath ? rawPath.split('/').pop() : 'root';
+    res.json({
+      cwd: {
+        name: cwdName,
+        path: rawPath ? `/${rawPath}` : '/',
+        hasChild: (folders.length + files.length) > 0
+      },
+      files: [
+
+        ...folders.map(f => ({
+          folderId: f.id,
+          parentId:  f.parent_id,
+          createdBy: f.created_by,
+          name:       f.name,
+          size:       0,
+          isFile:     false,
+          hasChild:   true,
+          type:         'Folder',
+          dateCreated: f.created_at, 
+
+
+        })),
+  
+        ...files.map(f => ({
+          fileId:     f.id,
+          filePath:   f.path,
+          folderId:   f.folder_id,
+          createdBy:  f.uploaded_by,
+          tags:        f.metadata,
+          name:        f.filename,
+          size:        f.size,
+          isFile:      true,
+          dateCreated: f.created_at,
+          type:     f.filename.includes('.') 
+                    ? f.filename.split('.').pop().toLowerCase() 
+                    : 'File', 
+
+        }))
+      ],
+      error: null
+      
+    });
+  }
+  catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 };
 exports.uploadFile = async (req, res) => {
   try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.replace('Bearer ', '');
+    if (!token) throw new Error('No auth token');
+    const supaAuth = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+    );
+    const { data: { user }, error: userErr } = await supaAuth.auth.getUser();
+    if (userErr || !user) throw userErr || new Error('No user from token');
+    const userId = user.id;
     const file = req.file;
-    const folderPath = req.body.path || "";
-    const folderId = req.body.folderId || null; // optional
-    const uploadedBy = req.body.uploadedBy || null; // optional
-    const metadataRaw = req.body.metadata || ""; // optional
-
+    const folderId = req.body.folderId || null; 
+    const uploadedBy = userId || null; 
+    const metadataRaw = req.body.metadata || "";
+    const folderPath = buildFolderPath(folderId);
     if (!file) {
       return res.status(400).json({ error: "No file provided." });
     }
