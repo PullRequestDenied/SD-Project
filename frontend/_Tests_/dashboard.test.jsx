@@ -52,9 +52,9 @@ describe('Dashboard component', () => {
         <Dashboard />
       </MemoryRouter>
     );
-    expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
-    expect(screen.getByText(/welcome TestUser/i)).toBeInTheDocument();
-    expect(screen.getByText(/Upload Test/i)).toBeInTheDocument();
+    expect(screen.getByText(/Admin Manager/i)).toBeInTheDocument();
+    expect(screen.getByText(/welcome, TestUser/i)).toBeInTheDocument();
+    //expect(screen.getByText(/Upload Test/i)).toBeInTheDocument(); no longer upload test
     expect(screen.getByText(/Mocked FileManager/i)).toBeInTheDocument();
   });
 
