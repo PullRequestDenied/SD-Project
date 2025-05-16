@@ -15,7 +15,7 @@ const Signin = () => {
     const [wrongPassword, setWrongPassword] = useState(0);
     const [resetPassword, setResetPassword] = useState(false);
 
-    const {signInUser} = UserAuth();
+    const {signInUser, signInWithGithub} = UserAuth();
     const navigate = useNavigate();
     const { darkMode } = useDarkMode();
 
@@ -37,6 +37,22 @@ const Signin = () => {
         } catch (error) {
             setError('An error occurred during sign up. Please try again.');
         }finally {
+            setLoading(false);
+        }
+    }
+
+     const handleGithubSignIn = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await signInWithGithub();
+            if (error) {
+                setError('An error occurred during GitHub sign in. Please try again.');
+            } else {
+                navigate('/Dashboard');
+            }
+        } catch (error) {
+            setError('An error occurred during GitHub sign in. Please try again.');
+        } finally {
             setLoading(false);
         }
     }
@@ -122,6 +138,15 @@ const Signin = () => {
                 {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
+
+            <button className={`w-full mt-3 py-3 rounded-md text-sm font-medium transition ${
+                  darkMode
+                    ? 'hover:!border-cyan-600 text-white'
+                    : 'hover:!bg-sky-700 text-white'
+                }`}
+                onClick={handleGithubSignIn}>
+                  signin with github
+            </button>
     
             <p className="mt-6 text-sm text-center">
               Don't have an account?{' '}

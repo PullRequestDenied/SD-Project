@@ -136,7 +136,8 @@ const Signup = () => {
                     : 'hover:!bg-sky-700 text-white'
                 }`}
                 onClick={handleGithubSignIn}>
-                  signin with github</button>
+                  signin with github
+            </button>
 
             <p className="mt-6 text-sm text-center">
               Already have an account?{' '}
