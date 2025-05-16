@@ -164,6 +164,25 @@ const AdminManager = () => {
     }
   };
 
+  // ✅ Handle rejecting a user
+  const handleReject = async (userId) => {
+    const id = String(userId).trim();
+
+    const { error } = await supabase
+      .from('applications')
+      .update({ is_denied: true })
+      .eq('user_id', id);
+
+    if (error) {
+      console.error('Failed to reject user:', error.message);
+      return;
+    }
+
+    const rejected = nonAdmins.find((u) => u.id === id);
+    setNonAdmins((prev) => prev.filter((u) => u.id !== id));
+    console.log(`✅ Rejected user ${id}`);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
       {/* Page Header */}
@@ -219,6 +238,7 @@ const AdminManager = () => {
                   email={user.email}
                   isAdmin={false}
                   onToggle={() => toggleAdmin(user.id)}
+                  onReject={() => handleReject(user.id)} // ✅ Added Reject
                 />
               ))}
               {nonAdmins.length === 0 && (
