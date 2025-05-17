@@ -41,7 +41,7 @@ async function getDescendantFolders(folderId) {
 async function getFilesInFolders(folderIds) {
   return supabase
     .from("files")
-    .select("id, path,filename,folder_id")
+    .select("id, path,filename,folder_id,type,size,metadata,created_at,uploaded_by")
     .in("folder_id", folderIds)
     .then(r => r.data)
 }
@@ -83,7 +83,7 @@ async function copyStorageObject(sourcePath, targetPath) {
 
   // 2) upload to the new location
   const { error: upErr } = await supabase
-    .storage.from(bucket).upload(targetPath, Buffer.from(buffer), { upsert: false });
+    .storage.from(bucket).upload(targetPath, Buffer.from(buffer), { upsert: true });
   if (upErr) throw upErr;
 
   // NO delete step!
@@ -149,6 +149,8 @@ exports.fileOperations = async (req, res) => {
       return await exports.rename(req, res,newName,data);
     case 'move':
       return await exports.move(req, res,path,targetPath,data);
+    case 'copy':
+      return await exports.copy(req, res,path,targetPath,data);
   }
 }
 exports.readFiles = async (req, res) => {
@@ -388,56 +390,6 @@ exports.deleteItem = async (req, res, deleteName, data) => {
     error: "Missing parameters: provide either {fileId } to delete a file, or { folderId } to delete a folder."
   });
 };
-exports.moveFile = async (req, res) => {
-  const { newFolderId, fileId } = req.body;
-  if (!newFolderId || !fileId) {
-    return res
-      .status(400)
-      .json({ error: "Missing newFolderId or fileId." });
-  }
-
-  try {
-    // 1) Load the existing file record to get its current path & name
-    const { data: file, error: fetchErr } = await supabase
-      .from("files")
-      .select("path, filename")
-      .eq("id", fileId)
-      .single();
-    if (fetchErr || !file) {
-      console.error("Fetch file error:", fetchErr);
-      return res.status(404).json({ error: "File not found." });
-    }
-
-    const fromPath = file.path;
-    const filename = file.filename || fromPath.split("/").pop();
-
-    // 2) Build the new storage path
-    //    buildFolderPath(newFolderId) → e.g. "Test/Upload"
-    const folderPath = await buildFolderPath(newFolderId);
-    const newPrefix  = `${BUCKET_ROOT}${folderPath ? `/${folderPath}` : ""}`;
-    const toPath     = `${newPrefix}/${filename}`;
-
-    // 3) Move the blob in Storage
-    await moveStorageObject(fromPath, toPath);
-
-    // 4) Update the DB record with its new folder, path & name
-    await updateFileRecord(fileId, {
-      folder_id: newFolderId,
-      path:      toPath,
-      filename
-    });
-
-    return res
-      .status(200)
-      .json({ message: `File moved to '${toPath}'.` });
-
-  } catch (err) {
-    console.error("moveFile error:", err);
-    return res
-      .status(500)
-      .json({ error: err.message || "Internal server error." });
-  }
-};
 exports.move = async (req, res,path,targetPath,data) => {
   const item = data[0];
   const fileId = item.fileId || null;
@@ -474,7 +426,7 @@ exports.move = async (req, res,path,targetPath,data) => {
       path:      toPath,
       filename
     });
-
+      const now = new Date().toISOString();
 res.json({
   cwd: null,
   files: [{
@@ -538,6 +490,7 @@ res.json({
       await moveStorageObject(file.path, target)
       await updateFilePath(file.id,        target)
     }
+          const now = new Date().toISOString();
 res.json({
   cwd: null,
   files: [{
@@ -560,60 +513,6 @@ res.json({
         .json({ error: err.message || "Internal server error" });
     }
   }
-}
-exports.moveFolder = async (req, res) => {
-  try {
-    const { folderId, destinationParentId } = req.body
-    const BUCKET_ROOT = "data"
-
-    // STEP 1: load folder & compute prefixes
-    const folder = await getFolder(folderId)
-    const originalParentPath = folder.parent_id
-      ? await buildFolderPath(folder.parent_id)
-      : ""
-    const newParentPath = destinationParentId
-      ? await buildFolderPath(destinationParentId)
-      : ""
-
-    const relativeOld = originalParentPath
-      ? `${originalParentPath}/${folder.name}`
-      : folder.name
-    const relativeNew = newParentPath
-      ? `${newParentPath}/${folder.name}`
-      : folder.name
-
-    const originalPrefix = `${BUCKET_ROOT}/${relativeOld}`
-    const newPrefix      = `${BUCKET_ROOT}/${relativeNew}`
-
-    // STEP 2: fetch subtree
-    const childFolderIds = await getDescendantFolderIds(folderId)
-    const allFolderIds   = [folderId, ...childFolderIds]
-    const filesToMove    = await getFilesInFolders(allFolderIds)
-
-    // STEP 3: update parent pointer
-    await updateFolderParent(folderId, destinationParentId)
-
-    // STEP 4: move each file in storage & update its DB path
-    for (let file of filesToMove) {
-      const relPath   = file.path.slice(originalPrefix.length + 1)
-      const target    = `${newPrefix}/${relPath}`
-
-      await moveStorageObject(file.path, target)
-      await updateFilePath(file.id,        target)
-    }
-
-  return res.json({
-    cwd:     null,
-    details: null,
-    files:   [ /* moved‐item descriptor */ ],
-    error:   null
-  });
-  } catch (err) {
-      console.error("moveFolder error:", err);
-      return res
-        .status(500)
-        .json({ error: err.message || "Internal server error" });
-    }
 };
 exports.copyFile = async (req, res) => {
   const { fileId, destinationFolderId, newFilename } = req.body;
@@ -815,6 +714,193 @@ res.json({
     res.status(500).json({ error: "Internal server error" });
   }
 };
+exports.copy = async(req,res,path,targetPath,data) => {
+  const item = data[0];
+  const fileId = item.fileId || null;
+  const folderId = item.folderId || null;
+  const destinationFolderId = await mapPathToFolderId(targetPath);
+  const createdBy = req.userId;
+  if (fileId) {  try {
+    // 1) Fetch existing file record
+    const { data: file, error: fetchErr } = await supabase
+      .from("files")
+      .select("path, filename,type,size,metadata,uploaded_by")
+      .eq("id", fileId)
+      .single();
+    if (fetchErr || !file) {
+      console.error("Fetch file error:", fetchErr);
+      return res.status(404).json({ error: "File not found." });
+    }
+
+    const fromPath = file.path;
+    const originalName = file.filename;
+    const fileType = file.type;
+    const fileSize = file.size;
+    const fileMetadata = file.metadata;
+    const uploadedBy = file.uploaded_by;
+    const filename = originalName;
+
+    // 2) Build the new storage path
+    const folderPath = await buildFolderPath(destinationFolderId);
+    const prefix     = `${BUCKET_ROOT}${folderPath ? `/${folderPath}` : ""}`;
+    const toPath     = `${prefix}/${filename}`;
+
+    // 3) Copy the blob in Storage
+    await copyStorageObject(fromPath, toPath);
+
+    // 4) Insert new metadata row
+    const { error: insertErr } = await supabase
+      .from("files")
+      .insert({
+        folder_id:  destinationFolderId,
+        path:       toPath,
+        filename,
+        type:       fileType,
+        size:       fileSize,
+        metadata:   fileMetadata,
+        uploaded_by: uploadedBy,
+        created_at: new Date()
+      });
+    if (insertErr) throw insertErr;
+      const now = new Date().toISOString();
+return res.json({
+  cwd: null,
+  files: [{
+    name:         filename,
+    isFile:       true,
+    size:         file.size,
+    dateCreated:  now,
+    dateModified: now,
+    filterPath:   toPath || '/',
+    hasChild:     false,
+    type:         'File'
+  }],
+  details: null,
+  error:   null
+});
+
+  } catch (err) {
+    console.error("copyFile error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Internal server error." });
+  }}
+  if (folderId) {  try {
+    // 1) Load source folder
+    const rootFolder = await getFolder(folderId);
+    if (!rootFolder) {
+      return res.status(404).json({ error: "Source folder not found." });
+    }
+    destinationParentId = destinationFolderId;
+
+    // 2) Duplicate root in DB
+    const newRoot = await createFolderRecord({
+      name:       rootFolder.name,
+      parent_id:  destinationParentId || null,
+      created_by: createdBy   || null
+    });
+
+    // 3) Compute storage prefixes
+    const originalPath = await buildFolderPath(folderId);
+    const newRootPath  = await buildFolderPath(newRoot.id);
+    const oldPrefix    = `${BUCKET_ROOT}/${originalPath}`;
+    const newPrefix    = `${BUCKET_ROOT}/${newRootPath}`;
+
+    // 4) Fetch & prepare descendant folders
+    let descendants = await getDescendantFolders(folderId);
+    // exclude the root if your RPC returns it
+    descendants = descendants.filter(d => d.id !== folderId);
+
+    // precompute fullPath for sorting
+    const descendantsWithPaths = await Promise.all(
+      descendants.map(async desc => ({
+        ...desc,
+        fullPath: await buildFolderPath(desc.id)
+      }))
+    );
+    // sort so parents come before children
+    descendantsWithPaths.sort((a, b) =>
+      a.fullPath.split("/").length - b.fullPath.split("/").length
+    );
+
+    // 5) Duplicate each descendant folder
+    const folderMap = { [folderId]: newRoot.id };
+    for (const desc of descendantsWithPaths) {
+      const parentNewId = folderMap[desc.parent_id];
+      if (parentNewId == null) {
+        throw new Error(`No mapping for parent ${desc.parent_id}`);
+      }
+      const created = await createFolderRecord({
+        name:       desc.name,
+        parent_id:  parentNewId,
+        created_by: createdBy   || null
+      });
+      folderMap[desc.id] = created.id;
+    }
+
+    // 6) Copy all files under the old subtree
+    const allOldIds = [folderId, ...await getDescendantFolderIds(folderId)];
+    const files     = await getFilesInFolders(allOldIds);
+    let fileEntry = null;
+    for (const file of files) {
+      if (!file.path || !file.filename) continue;
+
+      // compute relative path and target key
+      const relPath    = file.path.slice(oldPrefix.length + 1);
+      const targetPath = `${newPrefix}/${relPath}`;
+      console.log("Target Path:", targetPath);
+      // copy blob and insert a new metadata record
+    await copyStorageObject(file.path, targetPath);
+    const { error: insertErr } = await supabase
+      .from("files")
+      .insert({
+        folder_id:  folderMap[file.folder_id],
+        path:       targetPath,
+        filename:       file.filename,
+        type:       file.type,
+        size:       file.size,
+        metadata:   file.metadata,
+        uploaded_by: createdBy,
+        created_at: new Date()
+      });
+    if (insertErr) throw insertErr;
+    const now = new Date().toISOString();
+    fileEntry = {
+        name:        file.filename,
+        isFile:      true,
+        size:        file.size,
+        dateCreated: now,
+        dateModified: now,
+        filterPath:  targetPath,
+        hasChild:    false,
+        type:        'File'
+        };
+    }
+      const now = new Date().toISOString();
+return res.json({
+  cwd: null,
+  files: [{
+    name:         rootFolder.name,
+    isFile:       false,
+    size:         0,
+    dateCreated:  now,
+    dateModified: now,
+    filterPath:   newRootPath || '/',
+    hasChild:     true,
+    type:         'Folder'
+  },fileEntry],
+  details: null,
+  error:   null
+});
+
+  } catch (err) {
+    console.error("copyFolder error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Internal server error." });
+  }}
+
+};
 
 exports.rename = async (req, res,name,data) => {
   const item = data[0];
@@ -939,4 +1025,4 @@ exports.rename = async (req, res,name,data) => {
 
   }
 
-}
+};

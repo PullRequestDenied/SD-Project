@@ -1,4 +1,7 @@
 import React, {useState} from 'react'
+if (import.meta.hot) {
+  import.meta.hot.decline();
+}
 import { UserAuth } from '../context/AuthContext';
 import {
   FileManagerComponent,

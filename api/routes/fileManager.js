@@ -8,8 +8,6 @@ const {
   fileOperations,
   readFiles,
   uploadFile,
-  moveFile,
-  moveFolder, 
   copyFile,
   copyFolder,
   deleteItem,
@@ -20,8 +18,6 @@ router.post("/", readFiles);
 router.post("/file-operations",verifySupabaseJwt, fileOperations);
 router.post("/upload",verifySupabaseJwt, upload.single("uploadFiles"), uploadFile);
 router.post("/delete-item", deleteItem);
-router.post("/move-file", moveFile);
-router.post("/move-folder", moveFolder);
 router.post("/copy-file", copyFile);
 router.post("/copy-folder", copyFolder);
 // router.post("/delete-folder", deleteFolder);
