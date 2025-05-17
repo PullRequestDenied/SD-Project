@@ -4,6 +4,8 @@ import { UserAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useDarkMode } from '../context/DarkModeContext';
 import { ArrowLeft } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faGithub } from '@fortawesome/free-brands-svg-icons'
 
 
 const Signup = () => {
@@ -136,7 +138,7 @@ const Signup = () => {
                     : 'hover:!bg-sky-700 text-white'
                 }`}
                 onClick={handleGithubSignIn}>
-                  signin with github
+                  <FontAwesomeIcon icon={faGithub} /> Sign up with GitHub 
             </button>
 
             <p className="mt-6 text-sm text-center">

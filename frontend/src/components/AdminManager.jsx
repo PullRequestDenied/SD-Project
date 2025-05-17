@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabaseAdmin } from '../supabaseClient';
+import { supabase } from '../supabaseClient';
 import AdminUserCard from './AdminUserCard';
 
 const AdminManager = () => {
@@ -9,20 +9,76 @@ const AdminManager = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // const fetchUsersAndAdmins = async () => {
+    //   setLoading(true);
+
+    //   // Fetch all authenticated users
+    //   const { data: userResponse, error: userError } = await supabaseAdmin.auth.admin.listUsers();
+    //   if (userError) {
+    //     console.error('Error fetching users:', userError.message);
+    //     setLoading(false);
+    //     return;
+    //   }
+    //   const authUsers = userResponse?.users || [];
+
+    //   // Fetch user_roles to identify admins
+    //   const { data: roleData, error: roleError } = await supabaseAdmin.from('user_roles').select('*');
+    //   if (roleError) {
+    //     console.error('Error fetching user_roles:', roleError.message);
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Build admin ID set
+    //   const adminSet = new Set(
+    //     (roleData || [])
+    //       .filter((r) => r.role === 'admin')
+    //       .map((r) => String(r.user_id).trim())
+    //   );
+    //   setAdminIds(adminSet);
+
+    //   // Separate users into admin and non-admin lists
+    //   const adminsList = [];
+    //   const nonAdminsList = [];
+
+    //   authUsers.forEach((user) => {
+    //     const id = String(user.id).trim();
+    //     const userObj = {
+    //       id,
+    //       name: user.user_metadata?.display_name || 'Unnamed User',
+    //       email: user.email || 'No email',
+    //       isAdmin: adminSet.has(id),
+    //     };
+
+    //     userObj.isAdmin ? adminsList.push(userObj) : nonAdminsList.push(userObj);
+    //   });
+
+    //   setAdmins(adminsList);
+    //   setNonAdmins(nonAdminsList);
+    //   setLoading(false);
+    // };
+
     const fetchUsersAndAdmins = async () => {
       setLoading(true);
 
       // Fetch all authenticated users
-      const { data: userResponse, error: userError } = await supabaseAdmin.auth.admin.listUsers();
+      const { data: userResponse, error: userError } = await supabase.from('applications').select('*');
       if (userError) {
         console.error('Error fetching users:', userError.message);
         setLoading(false);
         return;
       }
-      const authUsers = userResponse?.users || [];
+
+      // Build admin ID set
+      const applicationUsers = (userResponse || [])
+      .filter((r) => r.is_denied === false || r.is_denied === null)
+      .map((r) => ({
+        user_id: String(r.user_id).trim(),
+        user_name: r.user_name || 'Unnamed User',
+      }));
 
       // Fetch user_roles to identify admins
-      const { data: roleData, error: roleError } = await supabaseAdmin.from('user_roles').select('*');
+      const { data: roleData, error: roleError } = await supabase.from('user_roles').select('*');
       if (roleError) {
         console.error('Error fetching user_roles:', roleError.message);
         setLoading(false);
@@ -41,12 +97,12 @@ const AdminManager = () => {
       const adminsList = [];
       const nonAdminsList = [];
 
-      authUsers.forEach((user) => {
-        const id = String(user.id).trim();
+      applicationUsers.forEach((user) => {
+        const id = String(user.user_id).trim();
         const userObj = {
           id,
-          name: user.user_metadata?.display_name || 'Unnamed User',
-          email: user.email || 'No email',
+          name: user.user_name || 'Unnamed User',
+          // email: user.email || 'No email',
           isAdmin: adminSet.has(id),
         };
 
@@ -56,7 +112,7 @@ const AdminManager = () => {
       setAdmins(adminsList);
       setNonAdmins(nonAdminsList);
       setLoading(false);
-    };
+    }
 
     fetchUsersAndAdmins();
   }, []);
@@ -67,7 +123,11 @@ const AdminManager = () => {
 
     if (isCurrentlyAdmin) {
       // Remove admin
-      const { error } = await supabaseAdmin
+      const { error: userError } = await supabase.from('applications')
+              .update({ is_accepted: false })
+              .eq('user_id', id);
+
+      const { error } = await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', id)
@@ -86,7 +146,11 @@ const AdminManager = () => {
       }
     } else {
       // Add admin
-      const { error } = await supabaseAdmin
+      const { error: userError } = await supabase.from('applications')
+              .update({ is_accepted: true })
+              .eq('user_id', id);
+
+      const { error } = await supabase
         .from('user_roles')
         .insert({ user_id: id, role: 'admin' });
 
@@ -98,6 +162,25 @@ const AdminManager = () => {
         setAdmins((prev) => [...prev, promoted]);
       }
     }
+  };
+
+  // ✅ Handle rejecting a user
+  const handleReject = async (userId) => {
+    const id = String(userId).trim();
+
+    const { error } = await supabase
+      .from('applications')
+      .update({ is_denied: true })
+      .eq('user_id', id);
+
+    if (error) {
+      console.error('Failed to reject user:', error.message);
+      return;
+    }
+
+    const rejected = nonAdmins.find((u) => u.id === id);
+    setNonAdmins((prev) => prev.filter((u) => u.id !== id));
+    console.log(`✅ Rejected user ${id}`);
   };
 
   return (
@@ -155,6 +238,7 @@ const AdminManager = () => {
                   email={user.email}
                   isAdmin={false}
                   onToggle={() => toggleAdmin(user.id)}
+                  onReject={() => handleReject(user.id)} // ✅ Added Reject
                 />
               ))}
               {nonAdmins.length === 0 && (
