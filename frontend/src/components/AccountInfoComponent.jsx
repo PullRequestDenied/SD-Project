@@ -36,12 +36,13 @@ const AccountInfoComponent = () => {
   return (
     
     <section className='flex justify-center transition-colors'>
+        
         <div className={`relative z-10 w-xl px-6 py-12 rounded-md transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
                   darkMode
                   ? 'bg-gray-800 border-gray-700 '
                   : 'bg-white border-gray-200 '
                 }`}>
-            
+            <h2 className="text-2xl font-bold mb-6 text-center">Username and Email </h2>
             <form className="space-y-4">
 
                 <label htmlFor="username" className='my-2'>Username</label>
@@ -75,7 +76,7 @@ const AccountInfoComponent = () => {
                 <div className='flex flex-col justify-between items-end'>
                     {edit ? (
                         <button
-                        className={`py-3 rounded-md text-sm font-medium transition ${
+                        className={`w-full py-3 rounded-md text-sm font-medium transition ${
                         darkMode
                             ? 'hover:!border-cyan-600 text-white'
                             : 'hover:!bg-sky-700 text-white'
@@ -86,7 +87,7 @@ const AccountInfoComponent = () => {
                     </button>
                     ):(
                     <button
-                        className={`py-3 rounded-md text-sm font-medium transition ${
+                        className={`w-full py-3 rounded-md text-sm font-medium transition ${
                         darkMode
                             ? 'hover:!border-cyan-600 text-white'
                             : 'hover:!bg-sky-700 text-white'

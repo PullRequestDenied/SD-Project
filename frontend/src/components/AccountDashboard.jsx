@@ -21,13 +21,42 @@ const AccountDashboard = () => {
               Back to Home
           </span>
         </Link>
-        <h2 className="text-4xl font-bold text-gray-800 dark:text-white">Account Information</h2>
-        <p className="my-4 text-lg text-gray-600 dark:text-gray-300">Here you can view and manage your account details.</p>
-        <AccountInfoComponent />
-        <ChangePasswordComponent />
-        <IdentitiesComponent />
-    </main>
-  )
-}
 
-export default AccountDashboard
+
+        <header className="text-center mb-15 mt-15">
+        <h2 className="text-4xl font-bold">Account Information</h2>
+        <p className={`mt-2 text-lg `}>
+          Here you can view and manage your account details.
+        </p>
+      </header>
+
+      <section className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-10 ">
+
+        <section className="pt-2">
+          <AccountInfoComponent />
+        </section>
+
+        <section className="pt-2">
+          <ChangePasswordComponent />
+        </section>
+
+      </section>
+
+      <section className="w-full max-w-5xl">
+        <IdentitiesComponent />
+      </section>
+
+    </main>
+  );
+};
+
+export default AccountDashboard;
+
+
+
+
+
+
+
+
+
