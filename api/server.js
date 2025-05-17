@@ -1,4 +1,5 @@
 // server.js
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -7,7 +8,7 @@ const fileManagerRoutes = require("./routes/fileManager");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({  allowedHeaders: ['Content-Type','Authorization','X-Folder-Id','X-File-Id']}));
 app.use(express.json());
 
 app.use("/api/filemanager", fileManagerRoutes);

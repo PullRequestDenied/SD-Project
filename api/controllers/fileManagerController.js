@@ -1,5 +1,4 @@
 const { createClient } = require("@supabase/supabase-js");
-
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const bucket = process.env.SUPABASE_BUCKET;
 const BUCKET_ROOT  = "data"; 
@@ -135,15 +134,28 @@ async function mapPathToFolderId(pathStr) {
   return parentId;
 }
 /*Helper functions*/
+exports.fileOperations = async (req, res) => {
+  
+    const { action,name,data} = req.body;
+    console.log("Action:", req.body);
+    console.log("Action:", action);
+      switch (action) {
+    case 'read':
+      return await exports.readFiles(req, res);
+    case 'delete':
+      return await exports.deleteItem(req, res,name,data);
+    case 'create':
+      return await exports.createFolder(req, res,name);
+  }
+}
 exports.readFiles = async (req, res) => {
   try {
-    console.log('READ Path:', req.body.path);
     const rawPath = (req.body.path || '').replace(/^\/+|\/+$/g, '');
     const folderId =
       rawPath === ''
       ? null                  
       : await mapPathToFolderId(rawPath);
-    console.log('READ folderId:', folderId);
+
     // 1) Fetch subfolders
 let folderQuery = supabase
   .from('folders')
@@ -196,7 +208,7 @@ const { data: folders, error: fErr } = await folderQuery;
         ...files.map(f => ({
           fileId:     f.id,
           filePath:   f.path,
-          folderId:   f.folder_id,
+          inFolderId:   f.folder_id,
           createdBy:  f.uploaded_by,
           tags:        f.metadata,
           name:        f.filename,
@@ -220,29 +232,22 @@ const { data: folders, error: fErr } = await folderQuery;
 };
 exports.uploadFile = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.replace('Bearer ', '');
-    if (!token) throw new Error('No auth token');
-    const supaAuth = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-    );
-    const { data: { user }, error: userErr } = await supaAuth.auth.getUser();
-    if (userErr || !user) throw userErr || new Error('No user from token');
-    const userId = user.id;
+    const selectedFolderId = req.get('X-Folder-Id') || null;
+    const userId = req.userId;
     const file = req.file;
-    const folderId = req.body.folderId || null; 
-    const uploadedBy = userId || null; 
+    const folderId = selectedFolderId || null;
+    const uploadedBy = userId || null;
     const metadataRaw = req.body.metadata || "";
-    const folderPath = buildFolderPath(folderId);
+    const folderPath = await buildFolderPath(folderId);
+
     if (!file) {
       return res.status(400).json({ error: "No file provided." });
     }
 
     const fullPath = folderPath
-      ? `${folderPath}/${file.originalname}`
+      ? `${BUCKET_ROOT}/${folderPath}/${file.originalname}`
       : file.originalname;
+
     const { error: storageError } = await supabase
       .storage
       .from(bucket)
@@ -250,12 +255,11 @@ exports.uploadFile = async (req, res) => {
         contentType: file.mimetype,
         upsert: true,
       });
+
     if (storageError) {
-      console.error("Upload error:", storageError.message);
       return res.status(500).json({ error: storageError.message });
     }
 
-    // 2. Insert metadata into your database
     let parsedMetadata = {};
     if (metadataRaw.trim()) {
       parsedMetadata = metadataRaw
@@ -263,6 +267,7 @@ exports.uploadFile = async (req, res) => {
         .map(t => t.trim())
         .filter(t => t.length);
     }
+
     const { error: dbError } = await supabase
       .from("files")
       .insert({
@@ -274,45 +279,137 @@ exports.uploadFile = async (req, res) => {
         folder_id: folderId,
         uploaded_by: uploadedBy,
       });
+
     if (dbError) {
-      console.error("DB insert error:", dbError.message);
       return res.status(500).json({ error: dbError.message });
     }
 
-    // 3. Only *now* send one final success
     return res.json({ message: "File uploaded and saved in database." });
   } catch (err) {
-    console.error("Unexpected upload error:", err);
-    // In case headers were already sent, guard against a second send:
     if (res.headersSent) return;
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-exports.deleteFile = async (req, res) => {
-  try {
-    const { path,fileId } = req.body;
+// exports.deleteFile = async (req, res) => {
+//   try {
+//     const { path,fileId } = req.body;
 
-    if (!path || !fileId) {
-      return res.status(400).json({ error: "Missing 'path' in request body." });
+//     if (!path || !fileId) {
+//       return res.status(400).json({ error: "Missing 'path' in request body." });
+//     }
+
+//     const { error } = await supabase.storage.from(bucket).remove([path]);
+
+//     if (error) {
+//       console.error("Delete error:", error.message);
+//       return res.status(500).json({ error: error.message });
+//     }
+//     const { error: dbError } = await supabase.from("files").delete().eq("id", fileId);
+//     if (dbError) {
+//       console.error("Database delete error:", dbError.message);
+//       return res.status(500).json({ error: dbError.message });
+//     }
+
+//     res.json({ message: "File deleted successfully." });
+//   } catch (err) {
+//     console.error("Unexpected delete error:", err);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
+exports.deleteItem = async (req, res, deleteName, data) => {
+  const item = data[0];
+  const fileId = item.fileId || null;
+  const folderId = item.folderId || null;
+
+  if (fileId) {
+    try {
+      const path = item.filePath;
+      const { error: storageErr } = await supabase
+        .storage
+        .from(bucket)
+        .remove([path]);
+      if (storageErr) {
+        return res.status(500).json({ error: storageErr.message });
+      }
+      const { error: dbErr } = await supabase
+        .from("files")
+        .delete()
+        .eq("id", fileId);
+      if (dbErr) {
+        return res.status(500).json({ error: dbErr.message });
+      }
+      const now = new Date().toISOString();
+      return res.json({
+        cwd: null,
+        details: null,
+        error: null,
+        files: [
+          {
+            dateModified: now,
+            filterPath: "/",
+            hasChild: false,
+            isFile: true,
+            name: deleteName,
+            size: item.size,
+            type: item.type,
+          }
+        ]
+      });
+    } catch (err) {
+      return res.status(500).json({ error: "Internal server error" });
     }
-
-    const { error } = await supabase.storage.from(bucket).remove([path]);
-
-    if (error) {
-      console.error("Delete error:", error.message);
-      return res.status(500).json({ error: error.message });
-    }
-    const { error: dbError } = await supabase.from("files").delete().eq("id", fileId);
-    if (dbError) {
-      console.error("Database delete error:", dbError.message);
-      return res.status(500).json({ error: dbError.message });
-    }
-
-    res.json({ message: "File deleted successfully." });
-  } catch (err) {
-    console.error("Unexpected delete error:", err);
-    res.status(500).json({ error: "Internal server error" });
   }
+
+  if (folderId) {
+    try {
+      const descendants = await getDescendantFolderIds(folderId);
+      const folderIds = [folderId, ...descendants];
+      const files = await getFilesInFolders(folderIds);
+      const filePaths = files.map(f => f.path);
+      const chunkSize = 1000;
+      for (let i = 0; i < filePaths.length; i += chunkSize) {
+        const chunk = filePaths.slice(i, i + chunkSize);
+        const { error: rmErr } = await supabase
+          .storage
+          .from(bucket)
+          .remove(chunk);
+        if (rmErr) throw rmErr;
+      }
+      const { error: fileDelErr } = await supabase
+        .from("files")
+        .delete()
+        .in("folder_id", folderIds);
+      if (fileDelErr) throw fileDelErr;
+      const { error: folderDelErr } = await supabase
+        .from("folders")
+        .delete()
+        .in("id", folderIds);
+      if (folderDelErr) throw folderDelErr;
+      const now = new Date().toISOString();
+      return res.json({
+        cwd: null,
+        details: null,
+        error: null,
+        files: [
+          {
+            dateModified: now,
+            filterPath: "/",
+            hasChild: true,
+            isFile: false,
+            name: deleteName,
+            size: item.size,
+            type: item.type,
+          }
+        ]
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || "Internal server error." });
+    }
+  }
+
+  return res.status(400).json({
+    error: "Missing parameters: provide either {fileId } to delete a file, or { folderId } to delete a folder."
+  });
 };
 exports.moveFile = async (req, res) => {
   const { newFolderId, fileId } = req.body;
@@ -622,8 +719,14 @@ exports.deleteFolder = async (req, res) => {
       .json({ error: err.message || "Internal server error." });
   }
 };
-exports.createFolder = async (req, res) => {
-  const {folderName,parentId,createdBy } = req.body;
+exports.createFolder = async (req, res, folderName) => {
+  const rawParentId = req.get('X-Folder-Id') || null;
+  const parentId = rawParentId && rawParentId !== 'null'
+    ? rawParentId
+    : null;
+  console.log("Parent ID:", parentId);
+  const createdBy = req.userId;
+  console.log(folderName);
 
   if (!folderName) {
     return res.status(400).json({ error: "Missing folderPathcor folderName" });
@@ -632,14 +735,29 @@ exports.createFolder = async (req, res) => {
     const {error: dbError} = await supabase.from("folders").insert({
         name: folderName,
         parent_id:parentId || null,
-        created_by:createdBy || null,
+        created_by:createdBy
     });
     if (dbError) {
         console.error("Database error:", dbError.message);
         return res.status(500).json({ error: dbError.message });
       }
 
-    res.json({ message: `Folder '${folderName}' created.` });
+const now = new Date().toISOString();
+res.json({
+  cwd: null,
+  files: [{
+    name:         folderName,
+    isFile:       false,
+    size:         0,
+    dateCreated:  now,
+    dateModified: now,
+    filterPath:   req.body.path || '/',
+    hasChild:     false,
+    type:         'Directory'
+  }],
+  details: null,
+  error:   null
+});
   } catch (err) {
     console.error("Unexpected createFolder error:", err);
     res.status(500).json({ error: "Internal server error" });
