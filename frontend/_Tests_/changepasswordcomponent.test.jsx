@@ -30,9 +30,9 @@ describe('ChangePassword Component', () => {
         <ChangePasswordComponent />
     );
 
-    expect(screen.getByRole('heading', { name: /Change Password/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Change Password/i })).toBeInTheDocument();
-  });
+        expect(screen.getByRole('heading', { name: /Change Password/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Change Password/i })).toBeInTheDocument();
+    });
 
   it('submits the form and calls updateUsernameAndEmail', async () => {
     render(
