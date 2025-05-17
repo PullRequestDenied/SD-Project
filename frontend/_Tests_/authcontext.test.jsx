@@ -14,6 +14,7 @@ vi.mock('../src/supabaseClient', () => ({
       onAuthStateChange: vi.fn(),
       resetPasswordForEmail: vi.fn(), 
       updateUser: vi.fn(),
+      signInWithOAuth: vi.fn(),
     }
   }
 }));
@@ -23,7 +24,8 @@ import { redirect } from 'react-router-dom';
 
 // Dummy consumer component
 const Consumer = () => {
-  const { session, loading, signUpNewUser, signInUser, signOut, requestReset, changePassword } = UserAuth();
+  const { session, loading, signUpNewUser, signInUser, signOut, requestReset, changePassword, updateUsernameAndEmail, signInWithGithub, getIdentities } = UserAuth();
+  const identities = getIdentities();
   return (
     <div>
       <p>Session: {session ? 'yes' : 'no'}</p>
@@ -33,6 +35,9 @@ const Consumer = () => {
       <button onClick={signOut}>SignOut</button>
       <button onClick={() => requestReset('a@test.com')}>Send Link</button>
       <button onClick={() => changePassword('123')}>Change Password</button>
+      <button onClick={() => updateUsernameAndEmail('Test', 'a@test.com')}>Update Username And Email</button>
+      <button onClick={() => signInWithGithub()}>SignIn With Github</button>
+      <span data-testid="identities">{JSON.stringify(identities)}</span>
     </div>
   );
 };
@@ -148,4 +153,65 @@ describe('AuthContext', () => {
       })
     );
   });
+
+  it('calls updateUsernameAndEmail correctly', async () => {
+    supabase.auth.updateUser.mockResolvedValue({ data: {}, error: null });
+
+    render(
+      <AuthContextProvider>
+        <Consumer />
+      </AuthContextProvider>
+    );
+
+    screen.getByText('Update Username And Email').click();
+
+    await waitFor(() =>
+      expect(supabase.auth.updateUser).toHaveBeenCalledWith({
+        email: 'a@test.com',
+        data: {
+          display_name: 'Test'
+        }
+      })
+    );
+  });
+
+  it('calls signinWithGithub correctly', async () => {
+    supabase.auth.signInWithOAuth.mockResolvedValue({ error: null });
+
+    render(
+      <AuthContextProvider>
+        <Consumer />
+      </AuthContextProvider>
+    );
+
+    screen.getByText('SignIn With Github').click();
+
+    await waitFor(() =>
+      expect(supabase.auth.signInWithOAuth).toHaveBeenCalled()
+    );
+  });
+
+  it('returns identities when session.user.identities exists', async () => {
+        const fakeIdentities = [{ id: '1', provider: 'github' }];
+        supabase.auth.getSession.mockResolvedValue({
+            data: { session: { user: { identities: fakeIdentities } } }
+        });
+        render(
+            <AuthContextProvider>
+                <Consumer />
+            </AuthContextProvider>
+        );
+        // Wait for useEffect to run
+        await screen.findByTestId('identities');
+        expect(screen.getByTestId('identities').textContent).toBe(JSON.stringify(fakeIdentities));
+    });
+
+  it('returns undefined when session is undqefined', async () => {
+        render(
+            <AuthContextProvider>
+                <Consumer />
+            </AuthContextProvider>
+        );
+        expect(screen.getByTestId('identities').textContent).toBe('');
+    });
 });

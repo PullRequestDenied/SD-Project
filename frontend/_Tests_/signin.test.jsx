@@ -43,7 +43,8 @@ describe('Signin component', () => {
     expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/you@example.com/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /signin with github/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument(); 
   });
 
   it('submits the form and calls signInUser', async () => {
@@ -90,6 +91,25 @@ describe('Signin component', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
+    });
+  });
+
+  it('calls signInWithGithub', async () => {
+    let mockSignInWithGithub = vi.fn().mockResolvedValue({ success: true });
+    UserAuth.mockImplementation(() => ({
+      signInWithGithub: mockSignInWithGithub
+    }));
+
+    render(
+      <MemoryRouter>
+        <Signin />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /signin with github/i }));
+
+    await waitFor(() => {
+      expect(mockSignInWithGithub).toHaveBeenCalled();
     });
   });
 });

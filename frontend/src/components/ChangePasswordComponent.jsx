@@ -62,20 +62,6 @@ const ChangePasswordComponent = () => {
     
             <form onSubmit={handleResetPassword} className="space-y-4">
 
-            {/* <label htmlFor="oldPassword" className='my-2'>Current Password</label>
-            <input
-                onChange={(e) => setOldPassword(e.target.value)}
-                className={`w-full p-3 rounded-md focus:outline-none focus:ring-2 transition ${
-                  darkMode
-                    ? 'bg-gray-700 text-white placeholder-gray-400 focus:ring-indigo-500'
-                    : 'bg-gray-100 text-black placeholder-gray-500 focus:ring-indigo-400'
-                }`}
-                type="password"
-                placeholder="Current Password"
-                id='oldPassword'
-                required
-              /> */}
-
               <label htmlFor="newPassword" className='my-2'>New Password</label>
               <input
                 onChange={(e) => setPassword(e.target.value)}

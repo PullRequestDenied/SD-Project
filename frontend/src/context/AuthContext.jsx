@@ -71,7 +71,7 @@ export const AuthContextProvider = ({ children }) => {
         return {success: true};
     };
 
-    //Change Password
+    //Reset Password
     const changePassword = async (password) => {
 
         const {data , error} =  await supabase.auth.updateUser({ password: password });
@@ -104,8 +104,14 @@ export const AuthContextProvider = ({ children }) => {
         return {success: true, data};
     }
 
+    //Get identities
+    const getIdentities = () => {
+        const identities = session?.user?.identities;
+        return identities;
+    }
+
     return (
-        <AuthContext.Provider value={{ session,loading, signUpNewUser, signOut, signInUser, requestReset, changePassword, updateUsernameAndEmail, signInWithGithub }}>
+        <AuthContext.Provider value={{ session,loading, signUpNewUser, signOut, signInUser, requestReset, changePassword, updateUsernameAndEmail, signInWithGithub, getIdentities }}>
             {children}
         </AuthContext.Provider>
     );
