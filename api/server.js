@@ -8,7 +8,7 @@ const fileManagerRoutes = require("./routes/fileManager");
 
 const app = express();
 
-app.use(cors({  allowedHeaders: ['Content-Type','Authorization','X-Folder-Id','X-File-Id']}));
+app.use(cors({  allowedHeaders: ['Content-Type','Authorization','X-Folder-Id','X-File-Id','X-Tags']}));
 app.use(express.json());
 
 app.use("/api/filemanager", fileManagerRoutes);

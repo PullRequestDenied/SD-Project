@@ -25,7 +25,10 @@
     "@syncfusion/ej2-grids": "^29.2.4",
     "@syncfusion/ej2-layouts": "^29.2.4",
     "@syncfusion/ej2-navigations": "^29.2.4",
+    "@syncfusion/ej2-react-calendars": "^29.2.4",
+    "@syncfusion/ej2-react-dropdowns": "^29.2.4",
     "@syncfusion/ej2-react-filemanager": "^29.2.4",
+    "@syncfusion/ej2-react-inputs": "^29.2.4",
     "@syncfusion/ej2-react-popups": "^29.2.4",
     "@tailwindcss/vite": "^4.1.4",
     "jwt-decode": "^4.0.0",
@@ -34,6 +37,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.5.0",
+    "react-tag-input-component": "^2.0.2",
     "tailwindcss": "^4.1.4",
     "vitest": "^3.1.2"
   },

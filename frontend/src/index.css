@@ -75,3 +75,12 @@ button:focus-visible {
   }
 } */
 
+/* e-filemanager-content wraps the details pane and tree pane */
+.my-fm .e-filemanager-content {
+  background-color: #f0f8ff;   /* light blueish */
+}
+/* toolbar bar background */
+.my-fm .e-filemanager-toolbar {
+  background-color: #333;
+  color: #fff;
+}

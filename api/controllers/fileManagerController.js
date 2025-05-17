@@ -242,9 +242,9 @@ exports.uploadFile = async (req, res) => {
     const file = req.file;
     const folderId = selectedFolderId || null;
     const uploadedBy = userId || null;
-    const metadataRaw = req.body.metadata || "";
+    const metadataRaw = req.get('X-Tags') || "";
     const folderPath = await buildFolderPath(folderId);
-
+    console.log("metadataRaw", metadataRaw);  
     if (!file) {
       return res.status(400).json({ error: "No file provided." });
     }
