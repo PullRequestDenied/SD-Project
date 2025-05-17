@@ -13,7 +13,12 @@ import SearchPage from "./components/SearchPage"
 import AdminManager from './components/AdminManager';
 import AdminApplication from "./components/AdminApplication";
 import AccountDashboard from "./components/AccountDashboard";
+import Layout from "./components/layout";
 export const router = createBrowserRouter([
+    {
+    path: '/',
+    element: <Layout />,
+    children: [
     {path: "/", element: <App />},
     {path: "/signup", element: <Signup />},
     {path: "/signin", element: <Signin />},
@@ -26,4 +31,6 @@ export const router = createBrowserRouter([
     { path: '/admin-manager', element: <AdminManager /> },
     {path: "/adminapplication", element: <AdminApplication /> },
     {path: "/account", element: <AuthenticatedRoute> <AccountDashboard /> </AuthenticatedRoute> },
+    ],
+    },
 ]);
