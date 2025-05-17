@@ -13,11 +13,7 @@ const {
   copyFile,
   copyFolder,
   deleteItem,
-  // deleteFile,
-  // deleteFolder,
   createFolder,
-  renameFile,
-  renameFolder 
 } = require("../controllers/fileManagerController");
 
 router.post("/", readFiles);
@@ -30,7 +26,5 @@ router.post("/copy-file", copyFile);
 router.post("/copy-folder", copyFolder);
 // router.post("/delete-folder", deleteFolder);
 router.post("/create-folder",verifySupabaseJwt,createFolder);
-router.post("/rename-file", renameFile);
-router.post("/rename-folder", renameFolder);
 
 module.exports = router;

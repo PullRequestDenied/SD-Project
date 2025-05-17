@@ -111,7 +111,8 @@ async function updateFolderName(folderId, name) {
   if (error) throw error;
 }
 async function mapPathToFolderId(pathStr) {
-  const segments = pathStr ? pathStr.split('/') : [];
+  const clean = (pathStr || '').replace(/^\/+|\/+$/g, '');  
+  const segments = clean ? clean.split('/') : [];
   let parentId = null;
 
   for (const segment of segments) {
@@ -136,8 +137,7 @@ async function mapPathToFolderId(pathStr) {
 /*Helper functions*/
 exports.fileOperations = async (req, res) => {
   
-    const { action,name,newName,data} = req.body;
-    console.log("newName",newName); 
+    const { action,name,newName,path,targetPath,data} = req.body;
       switch (action) {
     case 'read':
       return await exports.readFiles(req, res);
@@ -147,6 +147,8 @@ exports.fileOperations = async (req, res) => {
       return await exports.createFolder(req, res,name);
     case 'rename': 
       return await exports.rename(req, res,newName,data);
+    case 'move':
+      return await exports.move(req, res,path,targetPath,data);
   }
 }
 exports.readFiles = async (req, res) => {
@@ -436,6 +438,129 @@ exports.moveFile = async (req, res) => {
       .json({ error: err.message || "Internal server error." });
   }
 };
+exports.move = async (req, res,path,targetPath,data) => {
+  const item = data[0];
+  const fileId = item.fileId || null;
+  const folderId = item.folderId || null;
+  const newPath = await mapPathToFolderId(targetPath);
+  if (fileId) {
+      try {
+    // 1) Load the existing file record to get its current path & name
+    const { data: file, error: fetchErr } = await supabase
+      .from("files")
+      .select("path, filename,size")
+      .eq("id", fileId)
+      .single();
+    if (fetchErr || !file) {
+      console.error("Fetch file error:", fetchErr);
+      return res.status(404).json({ error: "File not found." });
+    }
+
+    const fromPath = file.path;
+    const filename = file.filename || fromPath.split("/").pop();
+
+    // 2) Build the new storage path
+    //    buildFolderPath(newFolderId) → e.g. "Test/Upload"
+    const folderPath = await buildFolderPath(newPath);
+    const newPrefix  = `${BUCKET_ROOT}${folderPath ? `/${folderPath}` : ""}`;
+    const toPath     = `${newPrefix}/${filename}`;
+
+    // 3) Move the blob in Storage
+    await moveStorageObject(fromPath, toPath);
+
+    // 4) Update the DB record with its new folder, path & name
+    await updateFileRecord(fileId, {
+      folder_id: newPath,
+      path:      toPath,
+      filename
+    });
+
+res.json({
+  cwd: null,
+  files: [{
+    name:         filename,
+    isFile:       true,
+    size:         file.size,
+    dateCreated:  now,
+    dateModified: now,
+    filterPath:   toPath || '/',
+    hasChild:     false,
+    type:         'File'
+  }],
+  details: null,
+  error:   null
+});
+
+  } catch (err) {
+    console.error("moveFile error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Internal server error." });
+  }
+
+  }
+  if (folderId) {
+    try {
+    destinationParentId = newPath
+
+    // STEP 1: load folder & compute prefixes
+    const folder = await getFolder(folderId)
+    const originalParentPath = folder.parent_id
+      ? await buildFolderPath(folder.parent_id)
+      : ""
+    const newParentPath = destinationParentId
+      ? await buildFolderPath(destinationParentId)
+      : ""
+
+    const relativeOld = originalParentPath
+      ? `${originalParentPath}/${folder.name}`
+      : folder.name
+    const relativeNew = newParentPath
+      ? `${newParentPath}/${folder.name}`
+      : folder.name
+
+    const originalPrefix = `${BUCKET_ROOT}/${relativeOld}`
+    const newPrefix      = `${BUCKET_ROOT}/${relativeNew}`
+
+    // STEP 2: fetch subtree
+    const childFolderIds = await getDescendantFolderIds(folderId)
+    const allFolderIds   = [folderId, ...childFolderIds]
+    const filesToMove    = await getFilesInFolders(allFolderIds)
+
+    // STEP 3: update parent pointer
+    await updateFolderParent(folderId, destinationParentId)
+
+    // STEP 4: move each file in storage & update its DB path
+    for (let file of filesToMove) {
+      const relPath   = file.path.slice(originalPrefix.length + 1)
+      const target    = `${newPrefix}/${relPath}`
+
+      await moveStorageObject(file.path, target)
+      await updateFilePath(file.id,        target)
+    }
+res.json({
+  cwd: null,
+  files: [{
+    name:         folder.name,
+    isFile:       false,
+    size:         0,
+    dateCreated:  now,
+    dateModified: now,
+    filterPath:   targetPath || '/',
+    hasChild:     true,
+    type:         'Folder'
+  }],
+  details: null,
+  error:   null
+});
+  } catch (err) {
+      console.error("moveFolder error:", err);
+      return res
+        .status(500)
+        .json({ error: err.message || "Internal server error" });
+    }
+  }
+}
 exports.moveFolder = async (req, res) => {
   try {
     const { folderId, destinationParentId } = req.body
@@ -477,7 +602,12 @@ exports.moveFolder = async (req, res) => {
       await updateFilePath(file.id,        target)
     }
 
-    return res.status(200).json({ message: "Folder moved successfully." })
+  return res.json({
+    cwd:     null,
+    details: null,
+    files:   [ /* moved‐item descriptor */ ],
+    error:   null
+  });
   } catch (err) {
       console.error("moveFolder error:", err);
       return res
@@ -685,106 +815,7 @@ res.json({
     res.status(500).json({ error: "Internal server error" });
   }
 };
-exports.renameFile = async (req, res) => {
-  const { fileId, newFilename, newFolderId } = req.body;
-  if (!fileId || !newFilename) {
-    return res.status(400).json({ error: "Missing fileId or newFilename." });
-  }
 
-  try {
-    // A) fetch existing record
-    const { data: file, error: fetchErr } = await supabase
-      .from("files")
-      .select("path, folder_id")
-      .eq("id", fileId)
-      .single();
-    if (fetchErr || !file) {
-      return res.status(404).json({ error: "File not found." });
-    }
-
-    // B) compute paths
-    const oldPath = file.path;
-    const targetFolder = newFolderId || file.folder_id;
-    const folderPath   = await buildFolderPath(targetFolder);
-    const toPath       = `${BUCKET_ROOT}/${folderPath}/${newFilename}`;
-
-    // C) rename in storage
-    await moveStorageObject(oldPath, toPath);
-
-    // D) update DB and return new record
-    const { data: updated, error: updErr } = await supabase
-      .from("files")
-      .update({
-        path:       toPath,
-        filename:   newFilename,
-        folder_id:  targetFolder,
-        created_at: new Date()
-      })
-      .eq("id", fileId)
-      .single();
-    if (updErr) throw updErr;
-
-    return res.status(200).json({ file: updated });
-  } catch (err) {
-    console.error("renameFile error:", err);
-    return res.status(500).json({ error: err.message || "Internal server error." });
-  }
-};
-
-exports.renameFolder = async (req, res,data) => {
-  const { folderId, newName } = req.body;
-  if (!folderId || !newName) {
-    return res
-      .status(400)
-      .json({ error: "Missing folderId or newName." });
-  }
-
-  try {
-    // STEP 1: load existing folder
-    const folder = await getFolder(folderId);
-
-    // STEP 2: build old vs new relative prefixes
-    const parentPath = folder.parent_id
-      ? await buildFolderPath(folder.parent_id)
-      : "";
-    const oldRel = parentPath
-      ? `${parentPath}/${folder.name}`
-      : folder.name;
-    const newRel = parentPath
-      ? `${parentPath}/${newName}`
-      : newName;
-
-    const oldPrefix = `${BUCKET_ROOT}/${oldRel}`;
-    const newPrefix = `${BUCKET_ROOT}/${newRel}`;
-
-    // STEP 3: fetch all descendant IDs + files
-    const descendants  = await getDescendantFolderIds(folderId);
-    const allFolderIds = [folderId, ...descendants];
-    const files        = await getFilesInFolders(allFolderIds);
-
-    // STEP 4: rename in DB
-    await updateFolderName(folderId, newName);
-
-    // STEP 5: move each file in Storage and update its DB record
-    for (let file of files) {
-      const relPath    = file.path.slice(oldPrefix.length + 1);
-      const targetPath = `${newPrefix}/${relPath}`;
-
-      await moveStorageObject(file.path,   targetPath);
-      await updateFilePath(file.id,         targetPath);
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Folder renamed successfully." });
-
-  } catch (err) {
-    console.error("renameFolder error:", err);
-    return res
-      .status(500)
-      .json({ error: err.message || "Internal server error." });
-  }
-};
 exports.rename = async (req, res,name,data) => {
   const item = data[0];
   const newFileName = name;
