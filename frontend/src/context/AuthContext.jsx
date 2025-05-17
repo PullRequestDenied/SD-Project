@@ -71,7 +71,7 @@ export const AuthContextProvider = ({ children }) => {
         return {success: true};
     };
 
-    //Change Password
+    //Reset Password
     const changePassword = async (password) => {
 
         const {data , error} =  await supabase.auth.updateUser({ password: password });
