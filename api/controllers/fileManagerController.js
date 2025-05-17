@@ -136,9 +136,8 @@ async function mapPathToFolderId(pathStr) {
 /*Helper functions*/
 exports.fileOperations = async (req, res) => {
   
-    const { action,name,data} = req.body;
-    console.log("Action:", req.body);
-    console.log("Action:", action);
+    const { action,name,newName,data} = req.body;
+    console.log("newName",newName); 
       switch (action) {
     case 'read':
       return await exports.readFiles(req, res);
@@ -146,6 +145,8 @@ exports.fileOperations = async (req, res) => {
       return await exports.deleteItem(req, res,name,data);
     case 'create':
       return await exports.createFolder(req, res,name);
+    case 'rename': 
+      return await exports.rename(req, res,newName,data);
   }
 }
 exports.readFiles = async (req, res) => {
@@ -290,32 +291,6 @@ exports.uploadFile = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-// exports.deleteFile = async (req, res) => {
-//   try {
-//     const { path,fileId } = req.body;
-
-//     if (!path || !fileId) {
-//       return res.status(400).json({ error: "Missing 'path' in request body." });
-//     }
-
-//     const { error } = await supabase.storage.from(bucket).remove([path]);
-
-//     if (error) {
-//       console.error("Delete error:", error.message);
-//       return res.status(500).json({ error: error.message });
-//     }
-//     const { error: dbError } = await supabase.from("files").delete().eq("id", fileId);
-//     if (dbError) {
-//       console.error("Database delete error:", dbError.message);
-//       return res.status(500).json({ error: dbError.message });
-//     }
-
-//     res.json({ message: "File deleted successfully." });
-//   } catch (err) {
-//     console.error("Unexpected delete error:", err);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// };
 exports.deleteItem = async (req, res, deleteName, data) => {
   const item = data[0];
   const fileId = item.fileId || null;
@@ -666,59 +641,6 @@ exports.copyFolder = async (req, res) => {
       .json({ error: err.message || "Internal server error." });
   }
 };
-exports.deleteFolder = async (req, res) => {
-  const { folderId } = req.body;
-  if (!folderId) {
-    return res
-      .status(400)
-      .json({ error: "Missing folderId." });
-  }
-
-  try {
-    // 1) Collect all folder IDs (root + descendants)
-    const descendants   = await getDescendantFolderIds(folderId);
-    const folderIds     = [folderId, ...descendants];
-
-    // 2) Fetch every file under those folders
-    const files         = await getFilesInFolders(folderIds);
-    const filePaths     = files.map(f => f.path);
-
-    // 3) Delete blobs in Storage (chunked to ≤1000 each)
-    const chunkSize = 1000;
-    for (let i = 0; i < filePaths.length; i += chunkSize) {
-      const chunk = filePaths.slice(i, i + chunkSize);
-      const { error: rmErr } = await supabase
-        .storage
-        .from(bucket)
-        .remove(chunk);
-      if (rmErr) throw rmErr;
-    }
-
-    // 4) Delete file records from your DB
-    const { error: fileDelErr } = await supabase
-      .from("files")
-      .delete()
-      .in("folder_id", folderIds);
-    if (fileDelErr) throw fileDelErr;
-
-    // 5) Delete folder records from your DB
-    const { error: folderDelErr } = await supabase
-      .from("folders")
-      .delete()
-      .in("id", folderIds);
-    if (folderDelErr) throw folderDelErr;
-
-    return res
-      .status(200)
-      .json({ message: "Folder and all contents deleted successfully." });
-
-  } catch (err) {
-    console.error("deleteFolder error:", err);
-    return res
-      .status(500)
-      .json({ error: err.message || "Internal server error." });
-  }
-};
 exports.createFolder = async (req, res, folderName) => {
   const rawParentId = req.get('X-Folder-Id') || null;
   const parentId = rawParentId && rawParentId !== 'null'
@@ -784,7 +706,7 @@ exports.renameFile = async (req, res) => {
     const oldPath = file.path;
     const targetFolder = newFolderId || file.folder_id;
     const folderPath   = await buildFolderPath(targetFolder);
-    const toPath       = `data/${folderPath}/${newFilename}`;
+    const toPath       = `${BUCKET_ROOT}/${folderPath}/${newFilename}`;
 
     // C) rename in storage
     await moveStorageObject(oldPath, toPath);
@@ -809,7 +731,7 @@ exports.renameFile = async (req, res) => {
   }
 };
 
-exports.renameFolder = async (req, res) => {
+exports.renameFolder = async (req, res,data) => {
   const { folderId, newName } = req.body;
   if (!folderId || !newName) {
     return res
@@ -863,3 +785,127 @@ exports.renameFolder = async (req, res) => {
       .json({ error: err.message || "Internal server error." });
   }
 };
+exports.rename = async (req, res,name,data) => {
+  const item = data[0];
+  const newFileName = name;
+  console.log("New File Name:", newFileName);
+  const fileId = item.fileId || null;
+  console.log("File ID:", fileId);
+  const folderId = item.folderId || null;
+  if (fileId){
+      try {
+    // A) fetch existing record
+    const { data: file, error: fetchErr } = await supabase
+      .from("files")
+      .select("path, folder_id,size")
+      .eq("id", fileId)
+      .single();
+    if (fetchErr || !file) {
+      return res.status(404).json({ error: "File not found." });
+    }
+
+    // B) compute paths
+    const oldPath = file.path;
+    console.log("Old Path:", oldPath);
+    const folderPath   = await buildFolderPath(file.folder_id);
+    console.log("Folder Path:", folderPath);
+    const toPath       = `${BUCKET_ROOT}/${folderPath}/${newFileName}`;
+
+    // C) rename in storage
+    await moveStorageObject(oldPath, toPath);
+
+    // D) update DB and return new record
+    const { data: updated, error: updErr } = await supabase
+      .from("files")
+      .update({
+        path:       toPath,
+        filename:   newFileName,
+        created_at: new Date()
+      })
+      .select('filename, size') 
+      .eq("id", fileId)
+      .single();
+    if (updErr) throw updErr;
+
+      const now = new Date().toISOString();
+      return res.json({
+        cwd:     null,
+        details: null,
+        error:   null,
+        files: [{
+    name:         updated.filename,                // use updated.filename
+    isFile:       true,
+    hasChild:     false,
+    size:         updated.size,                    // and updated.size
+    dateModified: now,
+    filterPath:   `/${folderPath}`,
+    type:         updated.filename.split('.').pop() 
+        }]
+      });
+  } catch (err) {
+    console.error("renameFile error:", err);
+    return res.status(500).json({ error: err.message || "Internal server error." });
+  }
+  }
+  if (folderId){
+      try {
+    // STEP 1: load existing folder
+    const folder = await getFolder(folderId);
+
+    // STEP 2: build old vs new relative prefixes
+    const parentPath = folder.parent_id
+      ? await buildFolderPath(folder.parent_id)
+      : "";
+    const oldRel = parentPath
+      ? `${parentPath}/${folder.name}`
+      : folder.name;
+    const newRel = parentPath
+      ? `${parentPath}/${newName}`
+      : newFileName;
+
+    const oldPrefix = `${BUCKET_ROOT}/${oldRel}`;
+    const newPrefix = `${BUCKET_ROOT}/${newRel}`;
+
+    // STEP 3: fetch all descendant IDs + files
+    const descendants  = await getDescendantFolderIds(folderId);
+    const allFolderIds = [folderId, ...descendants];
+    const files        = await getFilesInFolders(allFolderIds);
+
+    // STEP 4: rename in DB
+    await updateFolderName(folderId, newFileName);
+
+    // STEP 5: move each file in Storage and update its DB record
+    for (let file of files) {
+      const relPath    = file.path.slice(oldPrefix.length + 1);
+      const targetPath = `${newPrefix}/${relPath}`;
+
+      await moveStorageObject(file.path,   targetPath);
+      await updateFilePath(file.id,         targetPath);
+    }
+
+      const now = new Date().toISOString();
+      return res.json({
+        cwd:     null,
+        details: null,
+        error:   null,
+        files: [{
+    name:         newFileName,              
+    isFile:       false,
+    hasChild:     true,
+    size:         0,                   
+    dateModified: now,
+    filterPath:   `/${newRel}`,
+    type:         'Folder'
+        }]
+      });
+
+  } catch (err) {
+    console.error("renameFolder error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Internal server error." });
+  }
+
+  }
+
+}

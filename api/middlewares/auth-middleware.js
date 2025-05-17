@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 
 module.exports.verifySupabaseJwt = (req, res, next) => {
   const token = req.headers.authorization;
-  console.log('Token:', token);
   if (!token) return res.status(401).send('Missing token');
 
   try {

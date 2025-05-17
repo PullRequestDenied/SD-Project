@@ -23,6 +23,7 @@ export default function FileManagerPage() {
       ajaxArgs.httpRequest.setRequestHeader("X-File-Id", currentFileId);
 
 
+
     };
   };
   const onFileSelect = (args) => {
@@ -47,7 +48,6 @@ export default function FileManagerPage() {
         ajaxSettings={{
               url:       `${hostUrl}/api/filemanager/file-operations`,
               uploadUrl: `${hostUrl}/api/filemanager/upload`,
-              removeUrl: `${hostUrl}/api/filemanager/delete-item`,
         }}
         beforeSend={handleBeforeSend}
         fileSelect={onFileSelect}
