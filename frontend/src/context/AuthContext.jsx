@@ -104,8 +104,14 @@ export const AuthContextProvider = ({ children }) => {
         return {success: true, data};
     }
 
+    //Get identities
+    const getIdentities = () => {
+        const identities = session?.user?.identities;
+        return identities;
+    }
+
     return (
-        <AuthContext.Provider value={{ session,loading, signUpNewUser, signOut, signInUser, requestReset, changePassword, updateUsernameAndEmail, signInWithGithub }}>
+        <AuthContext.Provider value={{ session,loading, signUpNewUser, signOut, signInUser, requestReset, changePassword, updateUsernameAndEmail, signInWithGithub, getIdentities }}>
             {children}
         </AuthContext.Provider>
     );

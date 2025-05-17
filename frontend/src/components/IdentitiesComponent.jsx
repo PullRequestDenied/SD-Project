@@ -5,17 +5,16 @@ import IdentityCardComponent from './IdentityCardComponent';
 
 const IdentitiesComponent = () => {
      const { darkMode, toggleDarkMode } = useDarkMode();
-     const {session} = UserAuth();
+     const {getIdentities} = UserAuth();
 
      const [identities, setIdentities] = React.useState([]);
      const [hasIdentity, setHasIdentity] = React.useState(false);
 
     
+    
     React.useEffect(() => {
-        const getIdentities = () => {
-            setIdentities(session?.user?.identities);
-        }
-        getIdentities();
+        
+        setIdentities(getIdentities());
         identities.length > 0 ? setHasIdentity(true) : setHasIdentity(false);
 
         if(!hasIdentity){
@@ -23,12 +22,9 @@ const IdentitiesComponent = () => {
                 provider: "No linked accounts",
                 id: "No linked accounts",
                 user_id: "No linked accounts",
-                access_token: "No linked accounts",
-                created_at: "No linked accounts",
-                updated_at: "No linked accounts"
             }])
         }
-    }, [identities]);
+    }, []);
 
   return (
     <section className='justify-center transition-colors mt-6'>
