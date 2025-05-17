@@ -166,7 +166,7 @@ export default function LandingPage() {
 
             <Link to="/signin" className="w-full block">
               <button className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
-                {sidebarOpen ? 'Log in' : <FontAwesomeIcon icon={faArrowRightToBracket} />}
+                {sidebarOpen ? 'Sign in' : <FontAwesomeIcon icon={faArrowRightToBracket} />}
               </button>
             </Link>
           </>
