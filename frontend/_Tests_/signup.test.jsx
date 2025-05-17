@@ -46,6 +46,7 @@ describe('Signup component', () => {
     expect(screen.getByPlaceholderText(/bob@example.com/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /signin with github/i })).toBeInTheDocument();
   });
 
   it('submits the form and calls signUpNewUser', async () => {
@@ -98,6 +99,25 @@ describe('Signup component', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/signup failed/i)).toBeInTheDocument();
+    });
+  });
+
+  it('calls signInWithGithub', async () => {
+    let mockSignInWithGithub = vi.fn().mockResolvedValue({ success: true });
+    UserAuth.mockImplementation(() => ({
+      signInWithGithub: mockSignInWithGithub
+    }));
+
+    render(
+      <MemoryRouter>
+        <Signup />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /signin with github/i }));
+
+    await waitFor(() => {
+      expect(mockSignInWithGithub).toHaveBeenCalled();
     });
   });
 });
