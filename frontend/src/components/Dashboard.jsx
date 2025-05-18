@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserAuth } from '../context/AuthContext';
-import FileManager from './FileManager';
+// import FileManager from './FileManager';
 import FileManagerPage from './FileManagerPage';
 import AdminManager from './AdminManager';
 import { useDarkMode } from '../context/DarkModeContext';

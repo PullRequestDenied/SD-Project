@@ -70,7 +70,7 @@ export default function SearchPageLayout({ token }) {
   // Summarize
   const handleSummarize = async (docId) => {
     setCurrentSummary({ docId, text: '', loading: true })
-    const res = await fetch('/api/search/summarize', {
+    const res = await fetch('http://localhost:5000/api/search/summarize', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ docIds: [docId] }),
     })
@@ -197,7 +197,7 @@ export default function SearchPageLayout({ token }) {
       </Box>
 
       {currentSummary.docId && (
-        <Box mx={2} mb={4} p={3} bgcolor="#ffffff" borderRadius={2} boxShadow={2}>
+       <Box mx={2} mb={4} p={3} bgcolor="#000" color="#fff" borderRadius={2} boxShadow={2}>
           <Typography variant="h6">
             {currentSummary.loading
               ? 'Summarizing…'

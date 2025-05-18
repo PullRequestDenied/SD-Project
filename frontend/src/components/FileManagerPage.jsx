@@ -56,6 +56,7 @@ export default function FileManagerPage() {
   ajaxSettings={{
     url: `${hostUrl}/api/filemanager/file-operations`,
     uploadUrl: `${hostUrl}/api/filemanager/upload`,
+    // downloadUrl: `${hostUrl}/api/filemanager/download`,
   }}
   beforeSend={handleBeforeSend}
   fileSelect={onFileSelect}

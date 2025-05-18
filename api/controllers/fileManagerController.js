@@ -138,6 +138,7 @@ async function mapPathToFolderId(pathStr) {
 exports.fileOperations = async (req, res) => {
   
     const { action,name,newName,path,targetPath,data} = req.body;
+    console.log("Action:", action);
       switch (action) {
     case 'read':
       return await exports.readFiles(req, res);
@@ -514,162 +515,6 @@ res.json({
     }
   }
 };
-exports.copyFile = async (req, res) => {
-  const { fileId, destinationFolderId, newFilename } = req.body;
-  if (!fileId || !destinationFolderId) {
-    return res.status(400).json({
-      error: "Missing fileId or destinationFolderId."
-    });
-  }
-
-  try {
-    // 1) Fetch existing file record
-    const { data: file, error: fetchErr } = await supabase
-      .from("files")
-      .select("path, filename,type,size,metadata,uploaded_by")
-      .eq("id", fileId)
-      .single();
-    if (fetchErr || !file) {
-      console.error("Fetch file error:", fetchErr);
-      return res.status(404).json({ error: "File not found." });
-    }
-
-    const fromPath = file.path;
-    const originalName = file.filename;
-    const fileType = file.type;
-    const fileSize = file.size;
-    const fileMetadata = file.metadata;
-    const uploadedBy = file.uploaded_by;
-    const filename = newFilename || originalName;
-
-    // 2) Build the new storage path
-    const folderPath = await buildFolderPath(destinationFolderId);
-    const prefix     = `${BUCKET_ROOT}${folderPath ? `/${folderPath}` : ""}`;
-    const toPath     = `${prefix}/${filename}`;
-
-    // 3) Copy the blob in Storage
-    await copyStorageObject(fromPath, toPath);
-
-    // 4) Insert new metadata row
-    const { error: insertErr } = await supabase
-      .from("files")
-      .insert({
-        folder_id:  destinationFolderId,
-        path:       toPath,
-        filename,
-        type:       fileType,
-        size:       fileSize,
-        metadata:   fileMetadata,
-        uploaded_by: uploadedBy,
-        created_at: new Date()
-      });
-    if (insertErr) throw insertErr;
-
-    return res
-      .status(201)
-      .json({ message: `File copied to '${toPath}'.` });
-
-  } catch (err) {
-    console.error("copyFile error:", err);
-    return res
-      .status(500)
-      .json({ error: err.message || "Internal server error." });
-  }
-};
-exports.copyFolder = async (req, res) => {
-  const { folderId, destinationParentId, createdBy } = req.body;
-  if (!folderId) {
-    return res.status(400).json({ error: "Missing folderId." });
-  }
-
-  try {
-    // 1) Load source folder
-    const rootFolder = await getFolder(folderId);
-    if (!rootFolder) {
-      return res.status(404).json({ error: "Source folder not found." });
-    }
-
-    // 2) Duplicate root in DB
-    const newRoot = await createFolderRecord({
-      name:       rootFolder.name,
-      parent_id:  destinationParentId || null,
-      created_by: createdBy   || null
-    });
-
-    // 3) Compute storage prefixes
-    const originalPath = await buildFolderPath(folderId);
-    const newRootPath  = await buildFolderPath(newRoot.id);
-    const oldPrefix    = `${BUCKET_ROOT}/${originalPath}`;
-    const newPrefix    = `${BUCKET_ROOT}/${newRootPath}`;
-
-    // 4) Fetch & prepare descendant folders
-    let descendants = await getDescendantFolders(folderId);
-    // exclude the root if your RPC returns it
-    descendants = descendants.filter(d => d.id !== folderId);
-
-    // precompute fullPath for sorting
-    const descendantsWithPaths = await Promise.all(
-      descendants.map(async desc => ({
-        ...desc,
-        fullPath: await buildFolderPath(desc.id)
-      }))
-    );
-    // sort so parents come before children
-    descendantsWithPaths.sort((a, b) =>
-      a.fullPath.split("/").length - b.fullPath.split("/").length
-    );
-
-    // 5) Duplicate each descendant folder
-    const folderMap = { [folderId]: newRoot.id };
-    for (const desc of descendantsWithPaths) {
-      const parentNewId = folderMap[desc.parent_id];
-      if (parentNewId == null) {
-        throw new Error(`No mapping for parent ${desc.parent_id}`);
-      }
-      const created = await createFolderRecord({
-        name:       desc.name,
-        parent_id:  parentNewId,
-        created_by: createdBy   || null
-      });
-      folderMap[desc.id] = created.id;
-    }
-
-    // 6) Copy all files under the old subtree
-    const allOldIds = [folderId, ...await getDescendantFolderIds(folderId)];
-    const files     = await getFilesInFolders(allOldIds);
-
-    for (const file of files) {
-      if (!file.path || !file.filename) continue;
-
-      // compute relative path and target key
-      const relPath    = file.path.slice(oldPrefix.length + 1);
-      const targetPath = `${newPrefix}/${relPath}`;
-
-      // copy blob and insert a new metadata record
-      await copyStorageObject(file.path, targetPath);
-      await insertFileRecord({
-        folder_id:   folderMap[file.folder_id],
-        path:        targetPath,
-        filename:    file.filename,
-        metadata: {
-          created_at:  new Date(),
-          uploaded_by:  createdBy || null
-        }
-      });
-    }
-
-    return res.status(201).json({
-      message:     "Folder copied successfully.",
-      newFolderId: newRoot.id
-    });
-
-  } catch (err) {
-    console.error("copyFolder error:", err);
-    return res
-      .status(500)
-      .json({ error: err.message || "Internal server error." });
-  }
-};
 exports.createFolder = async (req, res, folderName) => {
   const rawParentId = req.get('X-Folder-Id') || null;
   const parentId = rawParentId && rawParentId !== 'null'
@@ -1026,3 +871,40 @@ exports.rename = async (req, res,name,data) => {
   }
 
 };
+
+// exports.download = async (req, res, next) => {
+//   try {
+//     console.log(req.body)
+//     const fileId = req.get('X-File-Id'); 
+//     console.log(fileId);   // or req.params.id or however you pass it
+//     const { data: fileMeta, error: metaErr } = await supabase
+//       .from('files')
+//       .select('path, filename, type')
+//       .eq('id', fileId)
+//       .single();
+//     if (metaErr) throw metaErr;
+//     if (!fileMeta) {
+//       return res.status(404).json({ error: 'File not found' });
+//     }
+
+//     // 2) Download the actual bytes from Storage
+//     const { data: fileStream, error: dlErr } = await supabase
+//       .storage
+//       .from(bucket)
+//       .download(fileMeta.path);
+//     if (dlErr) throw dlErr;
+
+//     // 3) Stream it back with proper headers
+//     res.setHeader('Content-Type', fileMeta.type || 'application/octet-stream');
+//     res.setHeader(
+//       'Content-Disposition',
+//       `attachment; filename="${encodeURIComponent(fileMeta.filename)}"`
+//     );
+
+//     // Node.js ReadableStream → Express response
+//     fileStream.pipe(res);
+//   } catch (err) {
+//     console.error('💥 download error:', err);
+//     next(err);
+//   }
+// };
