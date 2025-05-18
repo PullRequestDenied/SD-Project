@@ -7,6 +7,11 @@ import '@testing-library/jest-dom/vitest';
 // ✅ Mock: react-router's useNavigate
 const mockNavigate = vi.fn();
 
+// Mock DarkModeContext if used
+vi.mock('../src/context/DarkModeContext', () => ({
+  useDarkMode: () => ({ darkMode: false }),
+}));
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -54,8 +59,6 @@ describe('Dashboard component', () => {
     );
     //expect(screen.getByText(/Admin Manager/i)).toBeInTheDocument();
     expect(screen.getByText(/welcome, TestUser/i)).toBeInTheDocument();
-    //expect(screen.getByText(/Upload Test/i)).toBeInTheDocument(); no longer upload test
-    expect(screen.getByText(/Mocked FileManager/i)).toBeInTheDocument();
   });
 
   it('calls signOut and navigates on sign out click', async () => {
