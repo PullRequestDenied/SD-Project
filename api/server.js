@@ -8,8 +8,19 @@ const cors = require("cors");
 const fileManagerRoutes = require("./routes/fileManager");
 const searchRoutes = require("./routes/searchRoutes");
 const app = express();
-
-app.use(cors({  allowedHeaders: ['Content-Type','Authorization','X-Folder-Id','X-File-Id','X-Tags']}));
+const corsOptions = {
+  origin: '*',  // allow all origins :contentReference[oaicite:1]{index=1}
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],  // common methods :contentReference[oaicite:2]{index=2}
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Folder-Id',
+    'X-File-Id',
+    'X-Tags'
+  ]  // include your custom headers :contentReference[oaicite:3]{index=3}
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); 
 app.use(express.json());
 
 app.use("/api/filemanager", fileManagerRoutes);
