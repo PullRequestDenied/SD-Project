@@ -9,7 +9,17 @@ const fileManagerRoutes = require("./routes/fileManager");
 const searchRoutes = require("./routes/searchRoutes");
 const app = express();
 
-app.use(cors({  allowedHeaders: ['Content-Type','Authorization','X-Folder-Id','X-File-Id','X-Tags']}));
+const corsOptions = {
+  origin: 'https://icy-desert-00dd0cd10.6.azurestaticapps.net',
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Folder-Id',
+    'X-File-Id',
+    'X-Tags'
+  ]
+};
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
