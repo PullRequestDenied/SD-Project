@@ -41,13 +41,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
-          PORT: ${{ secrets.PORT }}              # or hard-code “5000” if you prefer
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          SUPABASE_BUCKET: ${{ secrets.SUPABASE_BUCKET }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          GOOGLE_APPLICATION_CREDENTIALS: "api/copper-moon-387900-f44be043d6f4.json"
-          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          VITE_SYNCFUSION_LICENSE_KEY: ${{secrets.VITE_SYNCFUSION_LICENSE_KEY}}
           
           ###### End of Repository/Build Configurations ######
 
