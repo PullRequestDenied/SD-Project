@@ -41,7 +41,7 @@ export default function SearchPageLayout({ token }) {
   const loadOptions = useCallback(async (input) => {
     setInputValue(input)
     const res = await fetch(
-      `http://localhost:5000/api/search/suggestions?term=${encodeURIComponent(input)}`
+      `https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/api/search/suggestions?term=${encodeURIComponent(input)}`
     )
     if (!res.ok) return []
     const list = await res.json()
@@ -61,7 +61,7 @@ export default function SearchPageLayout({ token }) {
     if (sortField) params.set('sort', sortField)
     if (sortOrder) params.set('order', sortOrder)
 
-    const res = await fetch(`http://localhost:5000/api/search?${params}`)
+    const res = await fetch(`https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/api/search?${params}`)
     const json = await res.json()
     setResults(json.results || [])
     setSidebarOpen(false)
@@ -70,7 +70,7 @@ export default function SearchPageLayout({ token }) {
   // Summarize
   const handleSummarize = async (docId) => {
     setCurrentSummary({ docId, text: '', loading: true })
-    const res = await fetch('http://localhost:5000/api/search/summarize', {
+    const res = await fetch('https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/api/search/summarize', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ docIds: [docId] }),
     })
