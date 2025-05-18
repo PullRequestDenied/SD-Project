@@ -19,7 +19,7 @@ export default function FileManagerPage() {
 
   const { session} = UserAuth();
   const token = session?.access_token || '';
-  const hostUrl = 'https://icy-desert-00dd0cd10-31.centralus.6.azurestaticapps.net';
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/';
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
       ajaxArgs.httpRequest.setRequestHeader("Authorization", `${token}`);
