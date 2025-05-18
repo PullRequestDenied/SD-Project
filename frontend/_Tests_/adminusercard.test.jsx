@@ -67,37 +67,37 @@ describe('AdminUserCard', () => {
     expect(mockonReject).toHaveBeenCalled();
   });
 
-  it('applies dark mode styling', async () => {
+  // it('applies dark mode styling', async () => {
+  //   vi.doMock('../src/context/DarkModeContext', () => ({
+  //     useDarkMode: () => ({ darkMode: true }),
+  //   }));
+  //   const { default: AdminUserCardDark } = await import('../src/components/AdminUserCard');
+  //   const { container } = render(
+  //     <AdminUserCardDark
+  //       name= 'adminuser'
+  //       email= 'admin@example.com'
+  //       isAdmin= {false}
+  //       onToggle={mockonToggle}
+  //       onReject={mockonReject}
+  //     />
+  //   );
+  //   expect(container.firstChild).toHaveClass('bg-gray-800');
+  // });
+
+  it('applies light mode styling', async () => {
     vi.doMock('../src/context/DarkModeContext', () => ({
-      useDarkMode: () => ({ darkMode: true }),
+      useDarkMode: () => ({ darkMode: false }),
     }));
     const { default: AdminUserCardDark } = await import('../src/components/AdminUserCard');
     const { container } = render(
       <AdminUserCardDark
         name= 'adminuser'
         email= 'admin@example.com'
-        isAdmin= {false}
+        isAdmin= {false} 
         onToggle={mockonToggle}
         onReject={mockonReject}
       />
     );
-    expect(container.firstChild).toHaveClass('bg-gray-800');
+    expect(container.firstChild).toHaveClass('bg-white');
   });
-
-//   it('applies light mode styling', async () => {
-//     vi.doMock('../src/context/DarkModeContext', () => ({
-//       useDarkMode: () => ({ darkMode: false }),
-//     }));
-//     const { default: AdminUserCardDark } = await import('../src/components/AdminUserCard');
-//     const { container } = render(
-//       <AdminUserCardDark
-//         name= 'adminuser'
-//         email= 'admin@example.com'
-//         isAdmin= {false}
-//         onToggle={mockonToggle}
-//         onReject={mockonReject}
-//       />
-//     );
-//     expect(container.firstChild).toHaveClass('bg-white');
-//   });
 });
