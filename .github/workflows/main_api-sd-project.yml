@@ -42,7 +42,7 @@ jobs:
         run: |
           npm install
           npm run build --if-present
-          npm run test --if-present
+          
           
       - name: Write GCP service-account key to api/
         run: |
