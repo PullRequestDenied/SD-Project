@@ -138,7 +138,7 @@ const Signup = () => {
                     : 'hover:!bg-sky-700 text-white'
                 }`}
                 onClick={handleGithubSignIn}>
-                  <FontAwesomeIcon icon={faGithub} /> Sign up with GitHub 
+                  <FontAwesomeIcon icon={faGithub} /> Log in with GitHub 
             </button>
 
             <p className="mt-6 text-sm text-center">

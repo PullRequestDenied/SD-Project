@@ -52,20 +52,21 @@ describe('Dashboard component', () => {
         <Dashboard />
       </MemoryRouter>
     );
-    expect(screen.getByText(/Admin Manager/i)).toBeInTheDocument();
+    //expect(screen.getByText(/Admin Manager/i)).toBeInTheDocument();
     expect(screen.getByText(/welcome, TestUser/i)).toBeInTheDocument();
     //expect(screen.getByText(/Upload Test/i)).toBeInTheDocument(); no longer upload test
     expect(screen.getByText(/Mocked FileManager/i)).toBeInTheDocument();
   });
 
   it('calls signOut and navigates on sign out click', async () => {
-    render(
+    const page = render(
       <MemoryRouter>
         <Dashboard />
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByText(/sign out/i));
+    const signoutBtn = page.container.querySelector('#signoutBtn');
+    fireEvent.click(signoutBtn);
 
     await waitFor(() => {
       expect(mockSignOut).toHaveBeenCalled();

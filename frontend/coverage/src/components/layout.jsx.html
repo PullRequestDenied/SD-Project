@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/components/AdminUserCard.jsx</title>
+    <title>Code coverage report for src/components/layout.jsx</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,20 +19,20 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/components</a> AdminUserCard.jsx</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/components</a> layout.jsx</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">8% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>2/25</span>
+                <span class='fraction'>0/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">8% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>2/25</span>
+                <span class='fraction'>0/18</span>
             </div>
         
             
@@ -98,22 +98,16 @@
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
-<a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a>
-<a name='L38'></a><a href='#L38'>38</a>
-<a name='L39'></a><a href='#L39'>39</a>
-<a name='L40'></a><a href='#L40'>40</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L36'></a><a href='#L36'>36</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -121,16 +115,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -140,44 +131,41 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React from 'react';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >// components/Layout.jsx<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cstat-no" title="statement not covered" >import { Outlet } from 'react-router-dom';</span>
+<span class="cstat-no" title="statement not covered" >import { Link } from 'react-router-dom';</span>
 &nbsp;
-export default <span class="fstat-no" title="function not covered" >function AdminUserCard({ name, email, isAdmin, onToggle, onReject }) {</span>
+<span class="cstat-no" title="statement not covered" >export default function Layout() {</span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
-<span class="cstat-no" title="statement not covered" >    &lt;div className="bg-gray-800 border border-gray-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div className="flex justify-between items-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;div className="text-lg font-medium text-white"&gt;{name}&lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;div className="text-sm text-gray-400"&gt;{email}&lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >          {isAdmin &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;span className="inline-block mt-1 text-xs font-medium text-green-300 bg-green-700 bg-opacity-20 px-2 py-0.5 rounded"&gt;</span>
-              Admin
-            &lt;/span&gt;
-          )}
-        &lt;/div&gt;
-<span class="cstat-no" title="statement not covered" >        &lt;div className="flex gap-2"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;button</span>
-<span class="cstat-no" title="statement not covered" >            onClick={onToggle}</span>
-<span class="cstat-no" title="statement not covered" >            className={`text-sm px-4 py-2 rounded-md font-medium transition duration-150 ${</span>
-<span class="cstat-no" title="statement not covered" >              isAdmin</span>
-<span class="cstat-no" title="statement not covered" >                ? 'bg-red-500 hover:bg-red-600 text-white'</span>
-<span class="cstat-no" title="statement not covered" >                : 'bg-blue-600 hover:bg-blue-700 text-white'</span>
-<span class="cstat-no" title="statement not covered" >            }`}</span>
-          &gt;
-<span class="cstat-no" title="statement not covered" >            {isAdmin ? 'Remove' : 'Make Admin'}</span>
-          &lt;/button&gt;
-<span class="cstat-no" title="statement not covered" >          {!isAdmin &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;button</span>
-<span class="cstat-no" title="statement not covered" >              onClick={onReject}</span>
-<span class="cstat-no" title="statement not covered" >              className="text-sm px-4 py-2 rounded-md bg-yellow-600 hover:bg-yellow-700 text-white font-medium transition duration-150"</span>
-<span class="cstat-no" title="statement not covered" >            &gt;</span>
-              Reject
-            &lt;/button&gt;
-          )}
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+<span class="cstat-no" title="statement not covered" >    &lt;nav className="min-h-screen flex flex-col relative"&gt;</span>
+      {/* Page content */}
+<span class="cstat-no" title="statement not covered" >      &lt;main className="flex-grow"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;Outlet /&gt;</span>
+      &lt;/main&gt;
+&nbsp;
+      {/* Transparent footer fixed to bottom, behind sidebar if needed */}
+<span class="cstat-no" title="statement not covered" >      &lt;footer className="fixed bottom-0 left-0 w-full z-10 bg-transparent"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;nav</span>
+<span class="cstat-no" title="statement not covered" >          className="text-center py-3 text-sm "</span>
+<span class="cstat-no" title="statement not covered" >          aria-label="Footer Navigation"</span>
+        &gt;
+<span class="cstat-no" title="statement not covered" >          &lt;ul className="flex justify-center gap-6 text-inherit"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;li&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;Link to="/privacypolicy" className="hover:underline"&gt;</span>
+                Privacy Policy
+              &lt;/Link&gt;
+            &lt;/li&gt;
+<span class="cstat-no" title="statement not covered" >            &lt;li&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;Link to="/contact" className="hover:underline"&gt;</span>
+                Contact Us
+              &lt;/Link&gt;
+            &lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/nav&gt;
+      &lt;/footer&gt;
+    &lt;/nav&gt;
   );
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;</pre></td></tr></table></pre>

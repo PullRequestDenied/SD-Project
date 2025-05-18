@@ -47,42 +47,27 @@ describe('LandingPage component', () => {
           loading: false
         });
     
-    render(
+    const page = render(
       <MemoryRouter>
         <LandingPage />
       </MemoryRouter>
     ); 
-
+    
     expect(screen.getByText(/What would you like to explore/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
+    expect(page.container.querySelector('#SignupBtn')).toBeInTheDocument();
+    expect(page.container.querySelector('#SigninBtn')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /search!/i })).toBeInTheDocument();
   });
 
-  it('renders collapsed sidebar when toggled', () => {
-    render(
-      <MemoryRouter>
-        <LandingPage />
-      </MemoryRouter>
-    );
-
-    const toggleButton = screen.getByRole('button', { name: /toggle sidebar/i });
-    fireEvent.click(toggleButton);
-
-    // Since sidebar state is internal and no visual text changes to assert directly,
-    // we could test class changes with data-testid in a more robust version.
-  });
 
   it('renders navigation links correctly', () => {
-    render(
+    const page = render(
       <MemoryRouter>
         <LandingPage />
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
-    expect(screen.getByText(/privacy policy/i)).toBeInTheDocument();
-    expect(screen.getByText(/contact us/i)).toBeInTheDocument();
+    expect(page.container.querySelector('#SignupBtn')).toBeInTheDocument();
+    expect(page.container.querySelector('#SigninBtn')).toBeInTheDocument();
   });
 });

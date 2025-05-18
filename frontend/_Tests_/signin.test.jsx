@@ -43,7 +43,7 @@ describe('Signin component', () => {
     expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/you@example.com/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /signin with github/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Log in with GitHub/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument(); 
   });
 
@@ -106,10 +106,10 @@ describe('Signin component', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /signin with github/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Log in with GitHub/i }));
 
     await waitFor(() => {
       expect(mockSignInWithGithub).toHaveBeenCalled();
     });
-  });
+  }); 
 });

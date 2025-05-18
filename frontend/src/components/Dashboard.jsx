@@ -90,7 +90,7 @@ const Dashboard = () => {
           </button>
         </Link>
 
-          <button
+          <button id='signoutBtn'
             onClick={handleSignOut}
             className="w-full text-sm py-2 rounded-md transition hover:bg-red-600">{sidebarOpen ? 'Sign Out' : <FontAwesomeIcon icon={faArrowRightFromBracket} />}
           </button>
