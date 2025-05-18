@@ -3,7 +3,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-//I was here
+
 
 const fileManagerRoutes = require("./routes/fileManager");
 const searchRoutes = require("./routes/searchRoutes");
