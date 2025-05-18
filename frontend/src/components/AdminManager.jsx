@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import AdminUserCard from './AdminUserCard';
-import { useDarkMode } from '../context/DarkModeContext'; // ✅ Added
+import { useDarkMode } from '../context/DarkModeContext'; 
 
 const AdminManager = () => {
   const [admins, setAdmins] = useState([]);
   const [nonAdmins, setNonAdmins] = useState([]);
   const [adminIds, setAdminIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
-  const { darkMode } = useDarkMode(); // ✅ Added
+  const { darkMode } = useDarkMode(); 
 
   useEffect(() => {
     // const fetchUsersAndAdmins = async () => {
@@ -166,7 +166,7 @@ const AdminManager = () => {
     }
   };
 
-  // ✅ Handle rejecting a user
+  //  Handle rejecting a user
   const handleReject = async (userId) => {
     const id = String(userId).trim();
 
@@ -240,7 +240,7 @@ const AdminManager = () => {
                   email={user.email}
                   isAdmin={false}
                   onToggle={() => toggleAdmin(user.id)}
-                  onReject={() => handleReject(user.id)} // ✅ Added Reject
+                  onReject={() => handleReject(user.id)} // Added Reject
                 />
               ))}
               {nonAdmins.length === 0 && (

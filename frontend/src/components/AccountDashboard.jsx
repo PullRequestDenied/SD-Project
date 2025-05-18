@@ -12,7 +12,7 @@ const AccountDashboard = () => {
     const { darkMode, toggleDarkMode } = useDarkMode();
 
   return (
-    <main className={`flex flex-col items-center w-full h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+    <main className={`flex flex-col items-center w-full min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
         <Link to="/"
             className="absolute top-6 left-6 group flex items-center space-x-1"
         >
