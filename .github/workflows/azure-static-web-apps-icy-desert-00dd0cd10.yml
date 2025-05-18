@@ -41,7 +41,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
-          PORT: ${{ secrets.PORT }}              # or hard-code “5000” if you prefer
+          VITE_SYNCFUSION_LICENSE_KEY: ${{secrets.VITE_SYNCFUSION_LICENSE_KEY}}
+          PORT: ${{ secrets.PORT }}            
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_BUCKET: ${{ secrets.SUPABASE_BUCKET }}
