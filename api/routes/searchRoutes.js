@@ -5,7 +5,7 @@ const {
   searchFiles,
   getSuggestions,
   summarizeText,
-} = require("../controllers/searchController");
+} = require("../controllers/searchController.js");
 
 // Full-text search with optional filters & pagination
 router.get("/", searchFiles);
