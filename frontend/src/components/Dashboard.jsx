@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserAuth } from '../context/AuthContext';
-import FileManager from './FileManager';
+// import FileManager from './FileManager';
+import FileManagerPage from './FileManagerPage';
 import AdminManager from './AdminManager';
 import { useDarkMode } from '../context/DarkModeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -101,7 +102,7 @@ const Dashboard = () => {
         <h2 className="text-3xl font-bold mb-6">
           Welcome, {session?.user?.user_metadata?.display_name}
         </h2>
-        {activePage === 'fileManager' ? <FileManager /> : <AdminManager />}
+        {activePage === 'fileManager' ? <FileManagerPage /> : <AdminManager />}
       </section>
     </main>
   );
