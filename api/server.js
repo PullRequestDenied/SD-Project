@@ -10,7 +10,7 @@ const searchRoutes = require("./routes/searchRoutes");
 const app = express();
 
 const corsOptions = {
-  origin: 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net',
+  origin: 'https://icy-desert-00dd0cd10.6.azurestaticapps.net',
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: [
     'Content-Type',
