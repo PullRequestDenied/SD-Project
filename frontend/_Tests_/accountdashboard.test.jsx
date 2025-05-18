@@ -29,7 +29,7 @@ describe('Account Dashboard Component', () => {
     it('renders the dashboard correctly', () => {
         render(
             <MemoryRouter>
-            <AccountDashboard />
+              <AccountDashboard />
             </MemoryRouter>
         );
 

@@ -36,6 +36,7 @@
     "@syncfusion/ej2-react-inputs": "^29.2.4",
     "@syncfusion/ej2-react-popups": "^29.2.4",
     "@tailwindcss/vite": "^4.1.4",
+    "@testing-library/dom": "^10.4.0",
     "date-fns": "^4.1.0",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.503.0",

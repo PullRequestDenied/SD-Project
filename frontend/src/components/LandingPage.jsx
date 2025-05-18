@@ -110,7 +110,7 @@ export default function LandingPage() {
           <ul className="space-y-2">
            
             <Link to="/" className="w-full block">
-                <button 
+                <button
                 className="w-full text-sm  hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">{sidebarOpen ? 'Home'  : <FontAwesomeIcon icon={faHouse} />}
                 </button>
               </Link>
@@ -130,25 +130,25 @@ export default function LandingPage() {
           <>
             {isAdmin ? (
               <Link to="/dashboard" className="w-full block">
-                <button 
+                <button id='dashboardBtn'
                 className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">{sidebarOpen ? 'Dashboard' : <FontAwesomeIcon icon={faFolderOpen} />}
                 </button>
               </Link>
             ) : (
               <Link to="/adminapplication" className="w-full block">
-                <button 
+                <button id='applicationBtn'
                 className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">{sidebarOpen ? 'Apply for Admin' : <FontAwesomeIcon icon={faPenToSquare} />}
                 </button>
               </Link>
             )}
 
             <Link to="/account" className="w-full block">
-                <button 
+                <button id='accountbtn'
                 className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">{sidebarOpen ? 'Account' : <FontAwesomeIcon icon={faUser} />}
                 </button>
               </Link>
 
-            <button
+            <button id='signoutBtn'
               onClick={handleSignOut}
               className="w-full text-sm hover:!border-red-600 py-2 rounded-md transition text-white dark:text-white">
               {sidebarOpen ? 'Sign Out' : <FontAwesomeIcon icon={faArrowRightFromBracket} />}
@@ -159,13 +159,13 @@ export default function LandingPage() {
         {!user && (
           <>
             <Link to="/signup" className="w-full block">
-              <button className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
+              <button id='SignupBtn' className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
                 {sidebarOpen ? 'Sign Up' : <FontAwesomeIcon icon={faUserPlus} />}
               </button>
             </Link>
 
             <Link to="/signin" className="w-full block">
-              <button className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
+              <button id='SigninBtn' className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">
                 {sidebarOpen ? 'Sign in' : <FontAwesomeIcon icon={faArrowRightToBracket} />}
               </button>
             </Link>

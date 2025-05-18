@@ -1,6 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import SearchPageLayout from '../src/components/SearchPage';
+import SearchFilters from '../src/components/SearchFilters';
 import { vi, describe, it, expect } from 'vitest';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('react-select/async', () => ({
   default: ({ loadOptions, onChange }) => {
@@ -96,5 +98,35 @@ describe('SearchPageLayout', () => {
 
     await waitFor(() => screen.getByText(/summary for file.txt/i));
     expect(screen.getByText('Mock summary text.')).not.toBeNull();
+  });
+});
+
+describe('SearchFilters', () => {
+  it('renders inputs and calls onSearch with correct params', async () => {
+    const onSearch = vi.fn();
+    render(<SearchFilters token="dummy" onSearch={onSearch} />);
+
+    const fromInput = screen.getByLabelText('From');
+    const toInput = screen.getByLabelText('To');
+    const searchButton = screen.getByRole('button', { name: /search/i });
+
+    await userEvent.type(fromInput, '2024-01-01');
+    await userEvent.type(toInput, '2024-01-31');
+
+    fireEvent.mouseDown(screen.getByLabelText('Type'));
+    const option = await screen.findByText('PDF');
+    fireEvent.click(option);
+
+    await userEvent.click(searchButton);
+
+    await waitFor(() => {
+      expect(onSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          term: '',
+          from: expect.any(String),
+          to: expect.any(String),
+        })
+      );
+    });
   });
 });
