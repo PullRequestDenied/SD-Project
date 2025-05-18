@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import AdminUserCard from './AdminUserCard';
+import { useDarkMode } from '../context/DarkModeContext'; 
 
 const AdminManager = () => {
   const [admins, setAdmins] = useState([]);
   const [nonAdmins, setNonAdmins] = useState([]);
   const [adminIds, setAdminIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const { darkMode } = useDarkMode(); 
 
   useEffect(() => {
     // const fetchUsersAndAdmins = async () => {
@@ -71,11 +73,11 @@ const AdminManager = () => {
 
       // Build admin ID set
       const applicationUsers = (userResponse || [])
-      .filter((r) => r.is_denied === false || r.is_denied === null)
-      .map((r) => ({
-        user_id: String(r.user_id).trim(),
-        user_name: r.user_name || 'Unnamed User',
-      }));
+        .filter((r) => r.is_denied === false || r.is_denied === null)
+        .map((r) => ({
+          user_id: String(r.user_id).trim(),
+          user_name: r.user_name || 'Unnamed User',
+        }));
 
       // Fetch user_roles to identify admins
       const { data: roleData, error: roleError } = await supabase.from('user_roles').select('*');
@@ -112,7 +114,7 @@ const AdminManager = () => {
       setAdmins(adminsList);
       setNonAdmins(nonAdminsList);
       setLoading(false);
-    }
+    };
 
     fetchUsersAndAdmins();
   }, []);
@@ -124,8 +126,8 @@ const AdminManager = () => {
     if (isCurrentlyAdmin) {
       // Remove admin
       const { error: userError } = await supabase.from('applications')
-              .update({ is_accepted: false })
-              .eq('user_id', id);
+        .update({ is_accepted: false })
+        .eq('user_id', id);
 
       const { error } = await supabase
         .from('user_roles')
@@ -147,8 +149,8 @@ const AdminManager = () => {
     } else {
       // Add admin
       const { error: userError } = await supabase.from('applications')
-              .update({ is_accepted: true })
-              .eq('user_id', id);
+        .update({ is_accepted: true })
+        .eq('user_id', id);
 
       const { error } = await supabase
         .from('user_roles')
@@ -164,7 +166,7 @@ const AdminManager = () => {
     }
   };
 
-  // ✅ Handle rejecting a user
+  //  Handle rejecting a user
   const handleReject = async (userId) => {
     const id = String(userId).trim();
 
@@ -184,21 +186,21 @@ const AdminManager = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
+    <div className={`max-w-7xl mx-auto px-6 py-10 transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       {/* Page Header */}
       <header className="mb-10">
-        <h1 className="text-4xl font-bold text-white mb-2">Admin Manager</h1>
-        <p className="text-gray-400 text-sm">
+        <h1 className={`text-4xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Admin Manager</h1>
+        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>
           Manage administrator privileges. Promote or demote users with a single click.
         </p>
       </header>
 
       {/* Loading */}
-      {loading && <div className="text-gray-300">Loading users...</div>}
+      {loading && <div className={`${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>Loading users...</div>}
 
       {/* No users fallback */}
       {!loading && admins.length + nonAdmins.length === 0 && (
-        <div className="text-gray-500 text-center text-sm">No users found.</div>
+        <div className={`${darkMode ? 'text-gray-500' : 'text-gray-600'} text-center text-sm`}>No users found.</div>
       )}
 
       {/* User Lists */}
@@ -206,7 +208,7 @@ const AdminManager = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {/* Admins */}
           <section>
-            <h2 className="text-xl font-semibold text-white border-b border-gray-700 pb-2 mb-4 sticky top-0 bg-gray-900 z-10">
+            <h2 className={`text-xl font-semibold border-b pb-2 mb-4 sticky top-0 z-10 ${darkMode ? 'text-white border-gray-700 bg-gray-900' : 'text-gray-900 border-gray-300 bg-gray-100'}`}>
               Administrators
             </h2>
             <div className="space-y-4">
@@ -220,14 +222,14 @@ const AdminManager = () => {
                 />
               ))}
               {admins.length === 0 && (
-                <p className="text-sm text-gray-500">No administrators yet.</p>
+                <p className={`${darkMode ? 'text-gray-500' : 'text-gray-600'} text-sm`}>No administrators yet.</p>
               )}
             </div>
           </section>
 
           {/* Non-admins */}
           <section>
-            <h2 className="text-xl font-semibold text-white border-b border-gray-700 pb-2 mb-4 sticky top-0 bg-gray-900 z-10">
+            <h2 className={`text-xl font-semibold border-b pb-2 mb-4 sticky top-0 z-10 ${darkMode ? 'text-white border-gray-700 bg-gray-900' : 'text-gray-900 border-gray-300 bg-gray-100'}`}>
               Standard Users
             </h2>
             <div className="space-y-4">
@@ -238,11 +240,11 @@ const AdminManager = () => {
                   email={user.email}
                   isAdmin={false}
                   onToggle={() => toggleAdmin(user.id)}
-                  onReject={() => handleReject(user.id)} // ✅ Added Reject
+                  onReject={() => handleReject(user.id)} // Added Reject
                 />
               ))}
               {nonAdmins.length === 0 && (
-                <p className="text-sm text-gray-500">No standard users found.</p>
+                <p className={`${darkMode ? 'text-gray-500' : 'text-gray-600'} text-sm`}>No standard users found.</p>
               )}
             </div>
           </section>
