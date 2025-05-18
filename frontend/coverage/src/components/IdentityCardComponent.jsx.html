@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/assets/ShinyText.jsx</title>
+    <title>Code coverage report for src/components/IdentityCardComponent.jsx</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,20 +19,20 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/assets</a> ShinyText.jsx</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/components</a> IdentityCardComponent.jsx</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>10/10</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>10/10</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -79,39 +79,45 @@
 <a name='L14'></a><a href='#L14'>14</a>
 <a name='L15'></a><a href='#L15'>15</a>
 <a name='L16'></a><a href='#L16'>16</a>
-<a name='L17'></a><a href='#L17'>17</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import './ShinyText.css';
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">import React from 'react'
+import { useDarkMode } from '../context/DarkModeContext';
 &nbsp;
-const ShinyText = ({ text, disabled = false, speed = 5, className = '' }) =&gt; {
-  const animationDuration = `${speed}s`;
+const IdentityCardComponent = ({identity}) =&gt; {
+    const { darkMode } = useDarkMode();
 &nbsp;
   return (
-    &lt;section
-      className={`shiny-text ${disabled ? 'disabled' : ''} ${className}`}
-      style={{ animationDuration }}
-    &gt;
-      {text}
-    &lt;/section&gt;
-  );
-};
+    &lt;section className={`flex flex-col w-full px-6 py-3 rounded-md transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
+                  darkMode
+                  ? 'bg-gray-700 border-gray-700 '
+                  : 'bg-white border-gray-200 '
+                }`}&gt;
+        &lt;p&gt;{identity?.provider}&lt;/p&gt;
 &nbsp;
-export default ShinyText;
-&nbsp;</pre></td></tr></table></pre>
+    &lt;/section&gt;
+  )
+}
+&nbsp;
+export default IdentityCardComponent</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
