@@ -102,9 +102,10 @@ export default function LandingPage() {
 
           {/* Logo / Title */}
           <header
-            className={`text-sm font-semibold tracking-wide uppercase whitespace-pre-line leading-5 mb-8 ${!sidebarOpen ? 'text-center text-xs' : ''}`}
+            className={`text-xl font-semibold tracking-wide whitespace-pre-line leading-5 mb-8 ${!sidebarOpen ? 'text-center' : ''}`}
           >
-            {sidebarOpen ? 'Constitutional\nArchive' : 'CA'}
+            {sidebarOpen ? 'Consti-' : 'C'}
+            <span className="text-indigo-500">Q</span>
           </header>
 
           <ul className="space-y-2">
@@ -115,11 +116,11 @@ export default function LandingPage() {
                 </button>
               </Link>
 
-              <Link to="/" className="w-full block">
+              {/* <Link to="/" className="w-full block">
                 <button 
                 className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white">{sidebarOpen ? 'Library' : <FontAwesomeIcon icon={faBookmark} />}
                 </button>
-              </Link>
+              </Link> */}
 
             
           </ul>
