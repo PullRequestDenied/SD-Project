@@ -1,7 +1,9 @@
 const { createClient } = require("@supabase/supabase-js");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const bucket = process.env.SUPABASE_BUCKET;
+
 const BUCKET_ROOT  = "data"; 
+
 /*Helper functions*/
 async function getFolder(folderId) {
   return supabase
@@ -137,8 +139,9 @@ async function mapPathToFolderId(pathStr) {
 /*Helper functions*/
 exports.fileOperations = async (req, res) => {
   
-    const { action,name,newName,path,targetPath,data} = req.body;
+    const { action,name,newName,path,targetPath,data,searchString} = req.body;
     console.log("Action:", action);
+    console.log(req.body);
       switch (action) {
     case 'read':
       return await exports.readFiles(req, res);
@@ -152,6 +155,12 @@ exports.fileOperations = async (req, res) => {
       return await exports.move(req, res,path,targetPath,data);
     case 'copy':
       return await exports.copy(req, res,path,targetPath,data);
+    case 'download':
+      return await exports.download(req, res, data);
+    case 'search':
+      return await filterFiles(res, path, searchString);
+    default:
+      return res.status(400).json({ error: `Invalid action: ${action}` });
   }
 }
 exports.readFiles = async (req, res) => {
@@ -289,6 +298,7 @@ exports.uploadFile = async (req, res) => {
     if (dbError) {
       return res.status(500).json({ error: dbError.message });
     }
+
 
     return res.json({ message: "File uploaded and saved in database." });
   } catch (err) {
@@ -516,6 +526,7 @@ res.json({
   }
 };
 exports.createFolder = async (req, res, folderName) => {
+  console.log(req.headers);
   const rawParentId = req.get('X-Folder-Id') || null;
   const parentId = rawParentId && rawParentId !== 'null'
     ? rawParentId
@@ -872,39 +883,90 @@ exports.rename = async (req, res,name,data) => {
 
 };
 
-// exports.download = async (req, res, next) => {
-//   try {
-//     console.log(req.body)
-//     const fileId = req.get('X-File-Id'); 
-//     console.log(fileId);   // or req.params.id or however you pass it
-//     const { data: fileMeta, error: metaErr } = await supabase
-//       .from('files')
-//       .select('path, filename, type')
-//       .eq('id', fileId)
-//       .single();
-//     if (metaErr) throw metaErr;
-//     if (!fileMeta) {
-//       return res.status(404).json({ error: 'File not found' });
-//     }
+exports.download = async (req, res,data) => {
+  try {
+  const item = data[0];
 
-//     // 2) Download the actual bytes from Storage
-//     const { data: fileStream, error: dlErr } = await supabase
-//       .storage
-//       .from(bucket)
-//       .download(fileMeta.path);
-//     if (dlErr) throw dlErr;
+  const fileId = item.id || null;
 
-//     // 3) Stream it back with proper headers
-//     res.setHeader('Content-Type', fileMeta.type || 'application/octet-stream');
-//     res.setHeader(
-//       'Content-Disposition',
-//       `attachment; filename="${encodeURIComponent(fileMeta.filename)}"`
-//     );
+    // Get the selected file ID from header
+    const selectedFileId = fileId;
+    if (!selectedFileId) {
+      return res.status(400).json({ error: 'Missing X-File-Id header' });
+    }
 
-//     // Node.js ReadableStream → Express response
-//     fileStream.pipe(res);
-//   } catch (err) {
-//     console.error('💥 download error:', err);
-//     next(err);
-//   }
-// };
+
+    // Fetch file path from database
+    const { data: fileRecord, error: dbError } = await supabase
+      .from('files')
+      .select('path,filename')
+      .eq('id', String(selectedFileId))
+      .single();
+
+
+    if (dbError || !fileRecord) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const filePath = fileRecord.path;
+
+    // Download file from Supabase Storage
+    const { data: fileStream, error: downloadError } = await supabase
+      .storage
+      .from(bucket)
+      .download(filePath);
+
+    if (downloadError || !fileStream) {
+      return res.status(500).json({ error: 'Error downloading file' });
+    }
+    const arrayBuffer = await fileStream.arrayBuffer();                // Blob.arrayBuffer() returns Promise<ArrayBuffer> :contentReference[oaicite:2]{index=2}
+    const buffer      = Buffer.from(arrayBuffer);  
+
+    // Set headers for file download
+    const fileName = fileRecord.filename;
+
+    // res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    // res.setHeader('Content-Type', 'application/octet-stream');
+    console.log('download(): fileRecord =', fileRecord);
+console.log('download(): fileRecord.filename =', fileRecord.filename);
+
+    res.attachment(fileName);
+
+    // Stream the file to the response
+res.send(buffer);
+  } catch (err) {
+    console.error('Download Controller Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+async function filterFiles(res, folderPath, searchString) {
+  // Convert from Syncfusion’s '*' wildcards to SQL '%'
+  const sqlPattern = searchString.replace(/\*/g, '%');
+  console.log(sqlPattern);
+
+  // Query Supabase for names matching the pattern **inside** this folder
+  const { data: items, error } = await supabase
+    .from('files')
+    .select('id,filename,path,type,size,created_at,metadata,folder_id,uploaded_by')
+    .ilike('filename', sqlPattern)              
+    .ilike('path', `data${folderPath}%`);     
+
+  if (error) throw error;
+
+  const result = items.map(f => ({
+          fileId:     f.id,
+          filePath:   f.path,
+          inFolderId:   f.folder_id,
+          createdBy:  f.uploaded_by,
+          tags:        f.metadata,
+          name:        f.filename,
+          size:        f.size,
+          isFile:      true,
+          dateCreated: f.created_at,
+          type:     f.filename.includes('.') 
+                    ? f.filename.split('.').pop().toLowerCase() 
+                    : 'File', 
+  }));
+
+  return res.json({ files: result });
+}

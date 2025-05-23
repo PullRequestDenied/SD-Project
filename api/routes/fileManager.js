@@ -10,12 +10,14 @@ const {
   uploadFile,
   deleteItem,
   createFolder,
+  download,
 } = require("../controllers/fileManagerController");
 
 router.post("/", readFiles);
 router.post("/file-operations",verifySupabaseJwt, fileOperations);
 router.post("/upload",verifySupabaseJwt, upload.single("uploadFiles"), uploadFile);
 router.post("/delete-item", deleteItem);
+router.post("/download",download)
 // router.post("/copy-file", copyFile);
 // router.post("/copy-folder", copyFolder);
 // router.post("/delete-folder", deleteFolder);
