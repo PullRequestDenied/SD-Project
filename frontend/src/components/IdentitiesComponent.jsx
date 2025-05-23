@@ -14,7 +14,9 @@ const IdentitiesComponent = () => {
     
     React.useEffect(() => {
         
-        setIdentities(getIdentities());
+        const ident = getIdentities();
+        setIdentities(ident);
+
         identities.length > 0 ? setHasIdentity(true) : setHasIdentity(false);
 
         if(!hasIdentity){
@@ -24,7 +26,7 @@ const IdentitiesComponent = () => {
                 user_id: "No linked accounts",
             }])
         }
-    }, []);
+    }, [identities]);
 
   return (
     <section className='justify-center transition-colors mt-6'>
