@@ -84,7 +84,7 @@ const Dashboard = () => {
             </button>
           </Link>
 
-          <button
+          <button id='signoutBtn'
             onClick={handleSignOut}
             className="w-full text-sm hover:!border-red-600 py-2 rounded-md transition text-white"
           >

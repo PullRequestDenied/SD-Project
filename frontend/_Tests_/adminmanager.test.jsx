@@ -1,6 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import SearchPageLayout from '../src/components/SearchPage';
+import SearchFilters from '../src/components/SearchFilters';
+import AdminManager from '../src/components/AdminManager';
 import { vi, describe, it, expect } from 'vitest';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('react-select/async', () => ({
   default: ({ loadOptions, onChange }) => {
@@ -39,6 +42,22 @@ vi.mock('@mui/x-date-pickers/DatePicker', () => ({
       onChange={(e) => onChange(new Date(e.target.value))}
     />
   )
+}));
+
+vi.mock('../src/context/DarkModeContext', () => ({
+  useDarkMode: () => ({ darkMode: false })
+}));
+
+vi.mock('../src/supabaseClient', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      update: vi.fn(() => Promise.resolve({ error: null })),
+      delete: vi.fn(() => Promise.resolve({ error: null })),
+      insert: vi.fn(() => Promise.resolve({ error: null })),
+      eq: vi.fn().mockReturnThis()
+    }))
+  }
 }));
 
 global.fetch = vi.fn();
@@ -96,5 +115,45 @@ describe('SearchPageLayout', () => {
 
     await waitFor(() => screen.getByText(/summary for file.txt/i));
     expect(screen.getByText('Mock summary text.')).not.toBeNull();
+  });
+});
+
+describe('SearchFilters', () => {
+  it('renders inputs and calls onSearch with correct params', async () => {
+    const onSearch = vi.fn();
+    render(<SearchFilters token="dummy" onSearch={onSearch} />);
+
+    const fromInput = screen.getByLabelText('From');
+    const toInput = screen.getByLabelText('To');
+    const searchButton = screen.getByRole('button', { name: /search/i });
+
+    await userEvent.type(fromInput, '2024-01-01');
+    await userEvent.type(toInput, '2024-01-31');
+
+    fireEvent.mouseDown(screen.getByLabelText('Type'));
+    const option = await screen.findByText('PDF');
+    fireEvent.click(option);
+
+    await userEvent.click(searchButton);
+
+    await waitFor(() => {
+      expect(onSearch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          term: '',
+          from: expect.any(String),
+          to: expect.any(String),
+        })
+      );
+    });
+  });
+});
+
+describe('AdminManager', () => {
+  it('renders loading initially and then shows fallback when no users', async () => {
+    render(<AdminManager />);
+    expect(screen.getByText(/loading users/i)).not.toBeNull();
+    await waitFor(() => {
+      expect(screen.getByText(/no users found/i)).not.toBeNull();
+    });
   });
 });

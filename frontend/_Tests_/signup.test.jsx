@@ -46,7 +46,7 @@ describe('Signup component', () => {
     expect(screen.getByPlaceholderText(/bob@example.com/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /signin with github/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Log in with GitHub/i })).toBeInTheDocument();
   });
 
   it('submits the form and calls signUpNewUser', async () => {
@@ -114,7 +114,7 @@ describe('Signup component', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /signin with github/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Log in with GitHub/i }));
 
     await waitFor(() => {
       expect(mockSignInWithGithub).toHaveBeenCalled();
