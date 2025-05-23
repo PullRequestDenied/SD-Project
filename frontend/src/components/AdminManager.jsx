@@ -77,6 +77,7 @@ const AdminManager = () => {
         .map((r) => ({
           user_id: String(r.user_id).trim(),
           user_name: r.user_name || 'Unnamed User',
+          motivation: r.motivation || '',
         }));
 
       // Fetch user_roles to identify admins
@@ -104,7 +105,7 @@ const AdminManager = () => {
         const userObj = {
           id,
           name: user.user_name || 'Unnamed User',
-          // email: user.email || 'No email',
+          motivation: user.motivation || '',
           isAdmin: adminSet.has(id),
         };
 
@@ -241,6 +242,7 @@ const AdminManager = () => {
                   isAdmin={false}
                   onToggle={() => toggleAdmin(user.id)}
                   onReject={() => handleReject(user.id)} // Added Reject
+                  motivation={user.motivation} // Pass motivation
                 />
               ))}
               {nonAdmins.length === 0 && (
