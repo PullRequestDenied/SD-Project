@@ -137,8 +137,7 @@ async function mapPathToFolderId(pathStr) {
 /*Helper functions*/
 exports.fileOperations = async (req, res) => {
   
-    const { action,name,newName,path,targetPath,data} = req.body;
-    console.log("Action:", action);
+    const { action,name,newName,path,targetPath,data,searchString} = req.body;
       switch (action) {
     case 'read':
       return await exports.readFiles(req, res);
@@ -152,6 +151,10 @@ exports.fileOperations = async (req, res) => {
       return await exports.move(req, res,path,targetPath,data);
     case 'copy':
       return await exports.copy(req, res,path,targetPath,data);
+    case 'search':
+      return await exports.filterFiles(req,res,path,searchString);
+    case 'download':
+      return await exports.download(req,res,data);
   }
 }
 exports.readFiles = async (req, res) => {
@@ -245,14 +248,14 @@ exports.uploadFile = async (req, res) => {
     const uploadedBy = userId || null;
     const metadataRaw = req.get('X-Tags') || "";
     const folderPath = await buildFolderPath(folderId);
-    console.log("metadataRaw", metadataRaw);  
+ 
     if (!file) {
       return res.status(400).json({ error: "No file provided." });
     }
 
     const fullPath = folderPath
       ? `${BUCKET_ROOT}/${folderPath}/${file.originalname}`
-      : file.originalname;
+      :  `${BUCKET_ROOT}/${file.originalname}`;
 
     const { error: storageError } = await supabase
       .storage
@@ -266,13 +269,24 @@ exports.uploadFile = async (req, res) => {
       return res.status(500).json({ error: storageError.message });
     }
 
-    let parsedMetadata = {};
+    let tagsArray;
     if (metadataRaw.trim()) {
-      parsedMetadata = metadataRaw
-        .split(",")
-        .map(t => t.trim())
-        .filter(t => t.length);
+      try {
+        tagsArray = JSON.parse(metadataRaw);
+        if (!Array.isArray(tagsArray)) {
+          throw new Error('Not an array');
+        }
+      } catch (jsonErr) {
+        // Fallback: comma-separated
+        tagsArray = metadataRaw
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean);
+      }
+    } else {
+      tagsArray = [];
     }
+    console.log(tagsArray);
 
     const { error: dbError } = await supabase
       .from("files")
@@ -281,7 +295,7 @@ exports.uploadFile = async (req, res) => {
         path: fullPath,
         type: file.mimetype,
         size: file.size,
-        metadata: parsedMetadata,
+        metadata: tagsArray,
         folder_id: folderId,
         uploaded_by: uploadedBy,
       });
@@ -516,13 +530,14 @@ res.json({
   }
 };
 exports.createFolder = async (req, res, folderName) => {
+
   const rawParentId = req.get('X-Folder-Id') || null;
   const parentId = rawParentId && rawParentId !== 'null'
     ? rawParentId
     : null;
-  console.log("Parent ID:", parentId);
+
   const createdBy = req.userId;
-  console.log(folderName);
+
 
   if (!folderName) {
     return res.status(400).json({ error: "Missing folderPathcor folderName" });
@@ -693,7 +708,7 @@ return res.json({
       // compute relative path and target key
       const relPath    = file.path.slice(oldPrefix.length + 1);
       const targetPath = `${newPrefix}/${relPath}`;
-      console.log("Target Path:", targetPath);
+
       // copy blob and insert a new metadata record
     await copyStorageObject(file.path, targetPath);
     const { error: insertErr } = await supabase
@@ -750,9 +765,9 @@ return res.json({
 exports.rename = async (req, res,name,data) => {
   const item = data[0];
   const newFileName = name;
-  console.log("New File Name:", newFileName);
+
   const fileId = item.fileId || null;
-  console.log("File ID:", fileId);
+
   const folderId = item.folderId || null;
   if (fileId){
       try {
@@ -768,9 +783,9 @@ exports.rename = async (req, res,name,data) => {
 
     // B) compute paths
     const oldPath = file.path;
-    console.log("Old Path:", oldPath);
+
     const folderPath   = await buildFolderPath(file.folder_id);
-    console.log("Folder Path:", folderPath);
+
     const toPath       = `${BUCKET_ROOT}/${folderPath}/${newFileName}`;
 
     // C) rename in storage
@@ -872,39 +887,114 @@ exports.rename = async (req, res,name,data) => {
 
 };
 
-// exports.download = async (req, res, next) => {
-//   try {
-//     console.log(req.body)
-//     const fileId = req.get('X-File-Id'); 
-//     console.log(fileId);   // or req.params.id or however you pass it
-//     const { data: fileMeta, error: metaErr } = await supabase
-//       .from('files')
-//       .select('path, filename, type')
-//       .eq('id', fileId)
-//       .single();
-//     if (metaErr) throw metaErr;
-//     if (!fileMeta) {
-//       return res.status(404).json({ error: 'File not found' });
-//     }
+exports.download = async (req, res,data) => {
+  try {
 
-//     // 2) Download the actual bytes from Storage
-//     const { data: fileStream, error: dlErr } = await supabase
-//       .storage
-//       .from(bucket)
-//       .download(fileMeta.path);
-//     if (dlErr) throw dlErr;
+  const item = data[0];
 
-//     // 3) Stream it back with proper headers
-//     res.setHeader('Content-Type', fileMeta.type || 'application/octet-stream');
-//     res.setHeader(
-//       'Content-Disposition',
-//       `attachment; filename="${encodeURIComponent(fileMeta.filename)}"`
-//     );
+  const fileId = item.id || null;
 
-//     // Node.js ReadableStream → Express response
-//     fileStream.pipe(res);
-//   } catch (err) {
-//     console.error('💥 download error:', err);
-//     next(err);
-//   }
-// };
+    const selectedFileId = fileId;
+    if (!selectedFileId) {
+      return res.status(400).json({ error: 'Error please try again' });
+    }
+
+
+   
+    const { data: fileRecord, error: dbError } = await supabase
+      .from('files')
+      .select('path,filename')
+      .eq('id', String(selectedFileId))
+      .single();
+
+
+    if (dbError || !fileRecord) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const filePath = fileRecord.path;
+
+    const { data: fileStream, error: downloadError } = await supabase
+      .storage
+      .from(bucket)
+      .download(filePath);
+
+    if (downloadError || !fileStream) {
+      return res.status(500).json({ error: 'Error downloading file' });
+    }
+    const arrayBuffer = await fileStream.arrayBuffer();                
+    const buffer      = Buffer.from(arrayBuffer);  
+
+
+    const fileName = fileRecord.filename;
+
+
+
+
+    res.attachment(fileName);
+
+res.send(buffer);
+  } catch (err) {
+    console.error('Download Controller Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+exports.filterFiles = async (req,res,folderPath,searchString)=> {
+  const sqlPattern = searchString.replace(/\*/g, '%');
+
+
+  const { data: items, error } = await supabase
+    .from('files')
+    .select('id,filename,path,type,size,created_at,metadata,folder_id,uploaded_by')
+    .ilike('filename', sqlPattern)              
+    .ilike('path', `data${folderPath}%`);     
+
+  if (error) throw error;
+
+  const result = items.map(f => ({
+          fileId:     f.id,
+          filePath:   f.path,
+          inFolderId:   f.folder_id,
+          createdBy:  f.uploaded_by,
+          tags:        f.metadata,
+          name:        f.filename,
+          size:        f.size,
+          isFile:      true,
+          dateCreated: f.created_at,
+          type:     f.filename.includes('.') 
+                    ? f.filename.split('.').pop().toLowerCase() 
+                    : 'File', 
+  }));
+
+  return res.json({ files: result });
+};
+// controllers/fileManagerController.js
+exports.updateMetadata = async (req,res) =>{
+    try {
+    console.log(req.body);
+    const { fileId, metadata } = req.body;
+    if (!fileId) {
+      return res.status(400).json({ error: 'Missing fileId' });
+    }
+
+    // 2. Update the `metadata` column in your `files` table
+    const { data, error } = await supabase
+      .from('files')
+      .update({ metadata })         // set the new metadata (string)
+      .eq('id', fileId)
+      .select();            // where id = fileId
+
+    if (error) {
+      console.error('Supabase update error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    // 3. Respond with success
+    return res.status(200).json({ ok: true, updated: data[0] });
+  } catch (err) {
+    console.error('updateMetadata error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
