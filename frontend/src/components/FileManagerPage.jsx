@@ -21,7 +21,7 @@ export default function FileManagerPage() {
   const fileObj = React.useRef(null);
   const { session} = UserAuth();
   const token = session?.access_token || '';
-  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net';
+  const hostUrl = 'http://localhost:5000';
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
         console.log('BeforeSend action:', args.action);
