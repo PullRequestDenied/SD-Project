@@ -11,12 +11,15 @@ import {
   Toolbar,
   ContextMenu
 } from '@syncfusion/ej2-react-filemanager';
+import { Button } from '@chakra-ui/react';
 
 export default function FileManagerPage() {
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [currentFileId,   setCurrentFileId  ] = useState(null);
   const [currentFileName, setCurrentFileName] = useState(null);
   const [tagsInput, setTagsInput] = useState('');
+  const [infoMode, setInfoMode] = useState('view'); // 'none' | 'view'
+  const [fileInfo, setFileInfo] = useState({ name: '', metadata: '', size: '' });
   const fileObj = React.useRef(null);
   const { session} = UserAuth();
   const token = session?.access_token || '';
@@ -67,23 +70,68 @@ export default function FileManagerPage() {
     link.remove();
     URL.revokeObjectURL(url);
   };
+function onFailure(args) {
+  console.warn('FileManager failure args:', args);
+  // Now inspect args.action in the console
+  if (args.action === 'Upload') {
+    alert('File upload failed: ' + (args.error?.message || 'Please select a valid folder to upload in,files should not be uploaded to root'));
+  }
+}
+  const onFileOpen = args => {
+    const folderId = args.fileDetails.folderId ?? null;
+    setCurrentFolderId(folderId);
+    setCurrentFileId(null);
+    setInfoMode('none');
+    if (folderId) {
+      fileObj.current.enableToolbarItems(['upload']);
+    } else {
+      fileObj.current.disableToolbarItems(['upload']);
+    }
+  };
+
   const onFileSelect = (args) => {
     if (!args.fileDetails.folderId) {
       setCurrentFileId(args.fileDetails.fileId);
       setCurrentFileName(args.fileDetails.name);
+            console.log(args.fileDetails.tags);
       setCurrentFolderId(null);
           fileObj.current.enableToolbarItems(['download']);
-      console.log('Selected file ID:', args.fileDetails.fileId);
-      console.log('Selected file Name', args.fileDetails.name);
+      console.log(args.fileDetails.metadata);
+      setFileInfo({
+        name: args.fileDetails.name,
+        metadata: args.fileDetails.tags || '',
+        size: args.fileDetails.size || ''
+      });
+      setInfoMode('view');
     }
     else {
-      setCurrentFolderId(args.fileDetails.folderId);
+      setInfoMode('none');
       setCurrentFileId(null);
-      console.log('Selected folder ID:', args.fileDetails.folderId);
-          fileObj.current.disableToolbarItems(['download']);
+      fileObj.current.disableToolbarItems(['download']);
     }
 
 
+  };
+  const handleMetadataSave = async () => {
+  try {
+    const res = await fetch(`${hostUrl}/api/filemanager/update-metadata`, {
+      method: 'PUT', // or POST depending on your endpoint
+      headers: { 'Content-Type': 'application/json', 'Authorization': token },
+      body: JSON.stringify({ fileId: currentFileId, metadata: fileInfo.metadata })
+    });
+    if (!res.ok) {
+      // Show error from server or fallback message
+      const errorData = await res.json().catch(() => null);
+      const message = (errorData && errorData.error) || 'Internal server error';
+      alert(message);
+      return;
+    }
+    alert("Success")
+    setInfoMode('none');
+  } catch (err) {
+    console.error('Metadata save failed:', err);
+    alert('Internal server error');
+  }
   };
 
   return (
@@ -100,10 +148,13 @@ export default function FileManagerPage() {
     uploadUrl: `${hostUrl}/api/filemanager/upload`,
     downloadUrl: `${hostUrl}/api/filemanager/file-operations`,
   }}
-
+  failure={onFailure}
   beforeSend={handleBeforeSend}
+  fileOpen={onFileOpen}
   fileSelect={onFileSelect}
   beforeDownload={beforeDownload}
+
+  
   toolbarSettings={{ items: ['NewFolder','Upload','Cut','Copy','Delete','Download','Rename','Refresh'] }}
 >
   {/* inject just the navigation tree and details‐view */}
@@ -123,12 +174,12 @@ export default function FileManagerPage() {
     style={{
       display: 'block',
       marginBottom: '4px',
-      fontSize: '1.1rem',    // ↑ larger
-      color: '#000',         // ↑ black
-      fontWeight: 500,       // optional: make it stand out
+      fontSize: '1.1rem',   
+      color: '#000',        
+      fontWeight: 500,       
     }}
   >
-    Tags (comma-separated)
+    Tags (comma-separated) (Enter your tags before uploading a file)
   </label>
   <input
     id="tags-input"
@@ -146,7 +197,42 @@ export default function FileManagerPage() {
       outline: 'none',
     }}
   />
+  
+      {infoMode !== 'none' && (
+        <div style={{ marginTop: 16, padding: 12, border: '1px solid #ccc', borderRadius: 4,color: '#000' }}>
+          <select
+            value={infoMode}
+            onChange={e => setInfoMode(e.target.value)}
+            style={{ marginBottom: 8, padding: 4 }}
+          >
+            <option value="view">File Information</option>
+            <option value="none">Hide</option>
+          </select>
+
+          {infoMode === 'view' && (
+            <div>
+              <p><strong>Name:</strong> {fileInfo.name}</p>
+              <p><strong>Size:</strong> {fileInfo.size}</p>
+              <label>
+                Metadata: (Edit tags if necessary)
+                <input
+                  type="text"
+                  value={fileInfo.metadata}
+                  onChange={e => setFileInfo({ ...fileInfo, metadata: e.target.value })}
+                  style={{ width: '100%', marginTop: 4, marginBottom: 8 }}
+                />
+              </label>
+              <div>
+                <button onClick={handleMetadataSave} style={{ marginRight: 8 }}>Save</button>
+                <button onClick={() => setInfoMode('none')}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+  
 </div>
+
 
     </div>
     
