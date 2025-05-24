@@ -17,7 +17,7 @@ const AdminApplication = () => {
   const [userId, setUserId] = useState(null);
   const [token, setToken] = useState('');
 
-  const hostUrl = 'http://localhost:5000/api/admin';
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/api/admin';
 
   // ✅ Extracted status check into a function
   const checkApplication = async (token) => {

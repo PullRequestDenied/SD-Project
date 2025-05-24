@@ -13,7 +13,7 @@ const AdminManager = () => {
   const { darkMode } = useDarkMode(); 
   const { session } = UserAuth();
 
-  const hostUrl = 'http://localhost:5000/api/admin';
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/api/admin';
 
    useEffect(() => {
       const fetchSessionAndCheck = async () => {
