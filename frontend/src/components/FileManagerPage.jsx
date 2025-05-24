@@ -6,7 +6,6 @@ import { UserAuth } from '../context/AuthContext';
 import {
   FileManagerComponent,
   Inject,
-  NavigationPane,
   DetailsView,
   Toolbar,
   ContextMenu
@@ -22,9 +21,12 @@ export default function FileManagerPage() {
   const fileObj = React.useRef(null);
   const { session} = UserAuth();
   const token = session?.access_token || '';
-  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/';
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net';
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
+        console.log('BeforeSend action:', args.action);
+  console.log('BeforeSend targetPath:', args.ajaxSettings.data?.targetPath);
+  console.log('BeforeSend targetData:', args.ajaxSettings.data?.targetData);
       ajaxArgs.httpRequest.setRequestHeader("Authorization", token);
 
       ajaxArgs.httpRequest.setRequestHeader("X-Folder-Id", currentFolderId);
@@ -76,14 +78,23 @@ function onFailure(args) {
     alert('File upload failed: ' + (args.error?.message || 'Please select a valid folder to upload in,files should not be uploaded to root'));
   }
 }
+  const onFileOpen = args => {
+    const folderId = args.fileDetails.folderId;
+    setCurrentFolderId(folderId);
 
+    setInfoMode('none');
+        if (folderId) {
+      fileObj.current.enableToolbarItems(['upload']);
+    } else {
+      fileObj.current.disableToolbarItems(['upload']);
+    }
+
+  };
 
   const onFileSelect = (args) => {
     if (!args.fileDetails.folderId) {
       setCurrentFileId(args.fileDetails.fileId);
-      console.log(args.fileDetails.fileId);
       setCurrentFileName(args.fileDetails.name);
-      console.log(args.fileDetails.tags);
       setCurrentFolderId(null);
  
       console.log(args.fileDetails.metadata);
@@ -96,7 +107,6 @@ function onFailure(args) {
     }
     else {
       setInfoMode('none');
-      setCurrentFolderId(args.fileDetails.folderId);
       setCurrentFileId(null);
 
     }
@@ -141,14 +151,14 @@ function onFailure(args) {
   }}
   failure={onFailure}
   beforeSend={handleBeforeSend}
-
+  fileOpen={onFileOpen}
   fileSelect={onFileSelect}
   beforeDownload={beforeDownload}
 
   
 >
   {/* inject just the navigation tree and details‐view */}
-  <Inject services={[NavigationPane, DetailsView, Toolbar, ContextMenu]} />
+  <Inject services={[DetailsView, Toolbar, ContextMenu]} />
 </FileManagerComponent>
       <div
         style={{

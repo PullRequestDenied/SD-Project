@@ -1,5 +1,7 @@
 // src/components/SearchPageLayout.jsx
 import React, { useState } from 'react'
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -36,8 +38,18 @@ export default function SearchPageLayout({ token }) {
   const [currentSummary, setCurrentSummary] = useState({ docId: null, text: '', loading: false })
   const [summaryText, setSummaryText] = useState({ docId: null, text: '', loading: false })
 
-  const hostUrl = 'http://localhost:5000'
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net'
+const location = useLocation();
 
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const initialTerm = params.get('term');
+  if (initialTerm) {
+    setQuestion(initialTerm);
+    // Optionally trigger auto-search:
+    handleSearch();
+  }
+}, [location.search]);
   // Ask‐question search
 const handleSearch = async () => {
   if (!question.trim()) return;
@@ -89,7 +101,7 @@ const handleSearch = async () => {
 const handleSummarize = async (docId) => {
   setSummaryText({ docId, text: '', loading: true });
   try {
-    const res = await fetch(`${hostUrl}/api/search/summarize`, { // Corrected API path
+    const res = await fetch(`${hostUrl}/api/search/summarize`, { 
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ docIds: [docId] })

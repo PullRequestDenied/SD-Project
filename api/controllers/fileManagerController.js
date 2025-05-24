@@ -650,6 +650,9 @@ res.json({
 };
 exports.copy = async(req,res,path,targetPath,data) => {
   const item = data[0];
+  console.log("MOVE/COPY item:", item);
+  console.log("TARGET PATH:", targetPath);
+
   const fileId = item.fileId || null;
   const folderId = item.folderId || null;
   const destinationFolderId = await mapPathToFolderId(targetPath);
