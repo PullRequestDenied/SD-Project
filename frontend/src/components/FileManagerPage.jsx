@@ -11,7 +11,6 @@ import {
   Toolbar,
   ContextMenu
 } from '@syncfusion/ej2-react-filemanager';
-import { Button } from '@chakra-ui/react';
 
 export default function FileManagerPage() {
   const [currentFolderId, setCurrentFolderId] = useState(null);
@@ -23,7 +22,7 @@ export default function FileManagerPage() {
   const fileObj = React.useRef(null);
   const { session} = UserAuth();
   const token = session?.access_token || '';
-  const hostUrl = 'http://localhost:5000';
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/';
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
       ajaxArgs.httpRequest.setRequestHeader("Authorization", token);

@@ -45,11 +45,12 @@ const Dashboard = () => {
       >
         <nav>
           <header
-            className={`text-sm font-semibold tracking-wide uppercase whitespace-pre-line leading-5 mb-8 ${
-              !sidebarOpen ? 'text-center text-xs' : ''
+            className={`text-xl font-semibold tracking-wide whitespace-pre-line leading-5 mb-8 ${
+              !sidebarOpen ? 'text-center' : ''
             }`}
           >
-            {sidebarOpen ? 'Constitutional\nArchive' : 'CA'}
+            {sidebarOpen ? 'Consti-' : 'C'}
+            <span className="text-indigo-500">Q</span>
           </header>
 
           <ul className="space-y-2">
