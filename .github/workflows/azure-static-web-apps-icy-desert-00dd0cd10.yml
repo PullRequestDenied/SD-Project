@@ -25,14 +25,10 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
-
       - name: Run unit tests with coverage
+        working-directory: ./frontend
         run: |
-          cd frontend
+          npm install
           npm run coverage
 
       - name: Write GCP service-account key to api/
