@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDarkMode } from '../context/DarkModeContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCircleXmark, faCircleCheck} from '@fortawesome/free-solid-svg-icons'
 
 export default function AdminUserCard({ name, email, isAdmin, onToggle, onReject, motivation }) {
   const { darkMode } = useDarkMode();
@@ -35,7 +37,8 @@ export default function AdminUserCard({ name, email, isAdmin, onToggle, onReject
       </header>
 
       <footer className="flex gap-2 flex-wrap justify-end">
-        <button
+        <button id='toggleBtn'
+          title= {isAdmin ? 'Remove' : 'Accept'}
           onClick={onToggle}
           className={`text-sm px-4 py-2 rounded-md font-medium transition duration-150 ${
             isAdmin
@@ -43,15 +46,16 @@ export default function AdminUserCard({ name, email, isAdmin, onToggle, onReject
               : 'bg-blue-600 hover:bg-blue-700 text-white'
           }`}
         >
-          {isAdmin ? 'Remove' : 'Make Admin'}
+          {isAdmin ? (<FontAwesomeIcon icon={faCircleXmark} />) : (<FontAwesomeIcon icon={faCircleCheck} />)}
         </button>
         {!isAdmin && onReject && (
           <>
-            <button
+            <button id='rejectBtn'
+              title='Reject'
               onClick={onReject}
               className="text-sm px-4 py-2 rounded-md bg-yellow-600 hover:bg-yellow-700 text-white font-medium transition duration-150"
             >
-              Reject
+              <FontAwesomeIcon icon={faCircleXmark} />
             </button>
             <button
               onClick={() => setShowMotivation(true)}
