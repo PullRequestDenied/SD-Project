@@ -2,7 +2,43 @@ const { createClient } = require("@supabase/supabase-js");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const bucket = process.env.SUPABASE_BUCKET;
 const BUCKET_ROOT  = "data"; 
+const { VertexAI,TextEmbeddingModel } = require('@google-cloud/vertexai');
+// Require the Vertex AI client and helpers
+const sdk = require('@google-cloud/aiplatform');      // root import
+const { PredictionServiceClient } = sdk.v1;          // the v1 namespace
+const { helpers } = sdk;                              // helpers live on the root
+
+// Point at the regional API endpoint
+const clientOptions = {
+  apiEndpoint: 'us-central1-aiplatform.googleapis.com'
+};
+const embedClient = new PredictionServiceClient(clientOptions);
+
+
+const vertexai = new VertexAI({
+  project: process.env.GOOGLE_CLOUD_PROJECT,
+  location:  'us-central1'
+});
+// load the embedding model you want (e.g. Goose or Gecko)
+
 /*Helper functions*/
+async function embedTexts(project, location, model, texts) {
+  const endpoint = `projects/${project}/locations/${location}/publishers/google/models/${model}`;
+  // Use helpers.toValue from the root import!
+  const instances = texts.map(t =>
+    // NOTE: use SEMANTIC_SIMILARITY instead of TEXT_EMBEDDING
+    helpers.toValue({ content: t, task_type: 'SEMANTIC_SIMILARITY' })
+  );
+  const [response] = await embedClient.predict({ endpoint, instances });
+  return response.predictions.map(p =>
+    p.structValue
+     .fields.embeddings
+     .structValue
+     .fields.values
+     .listValue.values
+     .map(v => v.numberValue)
+  );
+}
 async function getFolder(folderId) {
   return supabase
     .from("folders")
@@ -138,6 +174,7 @@ async function mapPathToFolderId(pathStr) {
 exports.fileOperations = async (req, res) => {
   
     const { action,name,newName,path,targetPath,data,searchString} = req.body;
+    console.log(req.body);
       switch (action) {
     case 'read':
       return await exports.readFiles(req, res);
@@ -248,6 +285,8 @@ exports.uploadFile = async (req, res) => {
     const uploadedBy = userId || null;
     const metadataRaw = req.get('X-Tags') || "";
     const folderPath = await buildFolderPath(folderId);
+    console.log(selectedFolderId);
+    console.log(folderPath);
  
     if (!file) {
       return res.status(400).json({ error: "No file provided." });
@@ -288,7 +327,7 @@ exports.uploadFile = async (req, res) => {
     }
     console.log(tagsArray);
 
-    const { error: dbError } = await supabase
+    const { data: [fileRecord], error: dbError } = await supabase
       .from("files")
       .insert({
         filename: file.originalname,
@@ -298,12 +337,47 @@ exports.uploadFile = async (req, res) => {
         metadata: tagsArray,
         folder_id: folderId,
         uploaded_by: uploadedBy,
-      });
+      })
+      .select('id');
 
-    if (dbError) {
-      return res.status(500).json({ error: dbError.message });
+    if (dbError || !fileRecord) {
+      return res.status(500).json({ error: dbError?.message || 'DB insert failed' });
     }
+    const newFileId = fileRecord.id;
+    console.log(fileRecord.id);
 
+    const textToEmbed = [file.originalname, ...tagsArray].join(' ');
+
+let embedding;
+try {
+  console.log('Calling embedTexts…');
+  const embeddings = await embedTexts(
+    process.env.GOOGLE_CLOUD_PROJECT,
+    'us-central1',
+    'text-embedding-005',
+    [textToEmbed]
+  );
+  console.log('embedTexts returned:', embeddings);
+  // since embedTexts returns an array of vectors
+  [embedding] = embeddings;
+  console.log('Selected first embedding vector (first 5 dims):', embedding.slice(0,5));
+} catch (err) {
+  console.error('❌ embedTexts threw an error:', err);
+  // fail gracefully or re-throw, depending on your flow
+  return res.status(500).json({ error: 'Embedding failed' });
+}
+
+// 3) Now log your Supabase update payload
+console.log('Updating DB row', newFileId, 'with embedding length', embedding.length);
+
+    // 4) Write embedding back into Supabase
+    const { data:updatedRows,error: embedError } = await supabase
+      .from('files')
+      .update({ embedding })
+      .eq('id', newFileId)
+      .select();
+    console.log('Supabase update:', { embedError, updatedRows });
+    if (embedError) console.warn('Embedding write failed:', embedError);
     return res.json({ message: "File uploaded and saved in database." });
   } catch (err) {
     if (res.headersSent) return;
@@ -576,6 +650,9 @@ res.json({
 };
 exports.copy = async(req,res,path,targetPath,data) => {
   const item = data[0];
+  console.log("MOVE/COPY item:", item);
+  console.log("TARGET PATH:", targetPath);
+
   const fileId = item.fileId || null;
   const folderId = item.folderId || null;
   const destinationFolderId = await mapPathToFolderId(targetPath);

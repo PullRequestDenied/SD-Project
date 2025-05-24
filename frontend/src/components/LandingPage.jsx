@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { UserAuth } from '../context/AuthContext';
 import { Menu, Moon, Sun, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import BlurText from '../assets/BlurText';
 import ShinyText from '../assets/ShinyText';
 import Particles from '../assets/Particals';
@@ -18,10 +19,12 @@ import{faBookmark,faPenToSquare,faFolderOpen,faUser} from '@fortawesome/free-reg
 export default function LandingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const navigate = useNavigate();
   const { session, signOut } = UserAuth();
   const user = session?.user;
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkedAdmin, setCheckedAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // console.log('LandingPage darkMode:', darkMode);
   // useEffect(() => {
@@ -60,6 +63,11 @@ export default function LandingPage() {
 
     checkAdmin();
   }, [user]);
+  const handleSubmit = (e) => {
+  e.preventDefault()
+  if (!searchTerm.trim()) return
+  navigate(`/search?term=${encodeURIComponent(searchTerm.trim())}`)
+}
 
 
   return (
@@ -203,16 +211,19 @@ export default function LandingPage() {
         />
 
           <form
+            onSubmit={handleSubmit}
             className={`flex items-center rounded-full overflow-hidden px-2 py-1 shadow-lg transition-colors ${
               darkMode ? 'bg-gray-800' : 'bg-white border border-gray-300'
             }`}
           >
             <input
               type="text"
+              value={searchTerm}
               placeholder="Search constitutional documents..."
               className="flex-grow bg-transparent px-4 py-2 focus:outline-none placeholder-gray-400 text-inherit"
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <button>
+            <button type="submit">
               <ShinyText text="search!" disabled={false} speed={2} className='custom-class' /> 
             </button>
 

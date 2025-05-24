@@ -6,7 +6,6 @@ import { UserAuth } from '../context/AuthContext';
 import {
   FileManagerComponent,
   Inject,
-  NavigationPane,
   DetailsView,
   Toolbar,
   ContextMenu
@@ -22,9 +21,12 @@ export default function FileManagerPage() {
   const fileObj = React.useRef(null);
   const { session} = UserAuth();
   const token = session?.access_token || '';
-  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/';
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net';
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
+        console.log('BeforeSend action:', args.action);
+  console.log('BeforeSend targetPath:', args.ajaxSettings.data?.targetPath);
+  console.log('BeforeSend targetData:', args.ajaxSettings.data?.targetData);
       ajaxArgs.httpRequest.setRequestHeader("Authorization", token);
 
       ajaxArgs.httpRequest.setRequestHeader("X-Folder-Id", currentFolderId);
@@ -77,25 +79,24 @@ function onFailure(args) {
   }
 }
   const onFileOpen = args => {
-    const folderId = args.fileDetails.folderId ?? null;
+    const folderId = args.fileDetails.folderId;
     setCurrentFolderId(folderId);
-    setCurrentFileId(null);
+
     setInfoMode('none');
-    if (folderId) {
+        if (folderId) {
       fileObj.current.enableToolbarItems(['upload']);
     } else {
       fileObj.current.disableToolbarItems(['upload']);
     }
+
   };
 
   const onFileSelect = (args) => {
     if (!args.fileDetails.folderId) {
       setCurrentFileId(args.fileDetails.fileId);
-      console.log(args.fileDetails.fileId);
       setCurrentFileName(args.fileDetails.name);
-      console.log(args.fileDetails.tags);
       setCurrentFolderId(null);
-          fileObj.current.enableToolbarItems(['download']);
+ 
       console.log(args.fileDetails.metadata);
       setFileInfo({
         name: args.fileDetails.name,
@@ -107,7 +108,7 @@ function onFailure(args) {
     else {
       setInfoMode('none');
       setCurrentFileId(null);
-      fileObj.current.disableToolbarItems(['download']);
+
     }
 
 
@@ -138,7 +139,7 @@ function onFailure(args) {
     <div className="control-section">
 <FileManagerComponent
 
-           ref={fileObj}
+  ref={fileObj}
   style={{ backgroundColor: 'white' }}
   id="file-manager"
   height="375px"
@@ -155,10 +156,9 @@ function onFailure(args) {
   beforeDownload={beforeDownload}
 
   
-  toolbarSettings={{ items: ['NewFolder','Upload','Cut','Copy','Delete','Download','Rename','Refresh'] }}
 >
   {/* inject just the navigation tree and details‐view */}
-  <Inject services={[NavigationPane, DetailsView, Toolbar, ContextMenu]} />
+  <Inject services={[DetailsView, Toolbar, ContextMenu]} />
 </FileManagerComponent>
       <div
         style={{
