@@ -1046,28 +1046,76 @@ exports.filterFiles = async (req,res,folderPath,searchString)=> {
   return res.json({ files: result });
 };
 // controllers/fileManagerController.js
-exports.updateMetadata = async (req,res) =>{
-    try {
-    console.log(req.body);
+exports.updateMetadata = async (req, res) => {
+  try {
+    console.log('updateMetadata payload:', req.body);
     const { fileId, metadata } = req.body;
+
+    // 1) Validate input
     if (!fileId) {
       return res.status(400).json({ error: 'Missing fileId' });
     }
 
-    // 2. Update the `metadata` column in your `files` table
-    const { data, error } = await supabase
+    // 2) Update the metadata column
+    const { data, error: metaError } = await supabase
       .from('files')
-      .update({ metadata })         // set the new metadata (string)
+      .update({ metadata })      // your incoming metadata (array or string)
       .eq('id', fileId)
-      .select();            // where id = fileId
-
-    if (error) {
-      console.error('Supabase update error:', error);
-      return res.status(500).json({ error: error.message });
+      .select();
+    if (metaError) {
+      console.error('Supabase metadata update error:', metaError);
+      return res.status(500).json({ error: metaError.message });
     }
 
-    // 3. Respond with success
-    return res.status(200).json({ ok: true, updated: data[0] });
+    // 3) Re-fetch the file record to get filename & updated metadata
+    const { data: [fileRecord], error: fetchError } = await supabase
+      .from('files')
+      .select('filename, metadata')
+      .eq('id', fileId);
+    if (fetchError || !fileRecord) {
+      console.error('Error fetching file for embedding:', fetchError);
+      return res.status(500).json({ error: 'Failed to fetch file after metadata update' });
+    }
+
+    // 4) Build the text to embed
+    const textToEmbedUpdate = [
+      fileRecord.filename,
+      ...(fileRecord.metadata || [])
+    ].join(' ');
+    console.log('Text to embed:', textToEmbedUpdate);
+
+    // 5) Generate embedding
+    let embedding;
+    try {
+      const embeddings = await embedTexts(
+        process.env.GOOGLE_CLOUD_PROJECT,
+        'us-central1',
+        'text-embedding-005',
+        [textToEmbedUpdate]
+      );
+      [embedding] = embeddings;
+      console.log('Received embedding vector length:', embedding.length);
+    } catch (err) {
+      console.error('❌ embedTexts threw an error:', err);
+      return res.status(500).json({ error: 'Embedding failed' });
+    }
+
+    // 6) Write the embedding back into Supabase
+    const { error: embedError } = await supabase
+      .from('files')
+      .update({ embedding })
+      .eq('id', fileId);
+    if (embedError) {
+      console.warn('Embedding write failed:', embedError);
+    }
+
+    // 7) Respond with success
+    return res.status(200).json({
+      ok: true,
+      updated: data[0],
+      embeddingWritten: !embedError
+    });
+
   } catch (err) {
     console.error('updateMetadata error:', err);
     return res.status(500).json({ error: 'Internal server error' });
