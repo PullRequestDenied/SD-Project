@@ -9,7 +9,6 @@ import {
   Toolbar,
   ContextMenu
 } from '@syncfusion/ej2-react-filemanager';
-import { Button } from '@chakra-ui/react';
 
 export default function FileManagerPage() {
   const [currentFolderId, setCurrentFolderId] = useState(null);
