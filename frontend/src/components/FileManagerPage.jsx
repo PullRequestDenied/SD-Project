@@ -9,24 +9,25 @@ import {
   Toolbar,
   ContextMenu
 } from '@syncfusion/ej2-react-filemanager';
-
-if (import.meta.hot) {
-  import.meta.hot.decline();
-}
+import { Button } from '@chakra-ui/react';
 
 export default function FileManagerPage() {
   const [currentFolderId, setCurrentFolderId] = useState(null);
-  const [currentFileId, setCurrentFileId] = useState(null);
+  const [currentFileId,   setCurrentFileId  ] = useState(null);
+  const [currentFileName, setCurrentFileName] = useState(null);
   const [tagsInput, setTagsInput] = useState('');
-  const { session } = UserAuth();
+  const [infoMode, setInfoMode] = useState('view'); // 'none' | 'view'
+  const [fileInfo, setFileInfo] = useState({ name: '', metadata: '', size: '' });
+  const fileObj = React.useRef(null);
+  const { session} = UserAuth();
   const { darkMode } = useDarkMode();
 
   const token = session?.access_token || '';
-  const hostUrl = 'http://localhost:5000';
-
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/';
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
-      ajaxArgs.httpRequest.setRequestHeader("Authorization", `${token}`);
+      ajaxArgs.httpRequest.setRequestHeader("Authorization", token);
+
       ajaxArgs.httpRequest.setRequestHeader("X-Folder-Id", currentFolderId);
       ajaxArgs.httpRequest.setRequestHeader("X-File-Id", currentFileId);
       const tagsArray = tagsInput.split(',').map(t => t.trim());
@@ -34,14 +35,101 @@ export default function FileManagerPage() {
     };
   };
 
+  const beforeDownload = async args => {
+    // 1) cancel default form POST
+    args.cancel = true;
+
+    // 2) grab name + id
+    const  name  = currentFileName;
+    const id       = currentFileId;
+    if (!id) return;
+
+    // 3) fetch yourself with headers
+    const res = await fetch(`${hostUrl}/api/filemanager/file-operations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': token,
+        'X-File-Id':     id
+      },
+      body: JSON.stringify({ action: 'download', data: [{ id }] })
+    });
+    if (!res.ok) throw new Error('Download failed');
+
+    // 4) blob + save
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href    = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+function onFailure(args) {
+  console.warn('FileManager failure args:', args);
+  // Now inspect args.action in the console
+  if (args.action === 'Upload') {
+    alert('File upload failed: ' + (args.error?.message || 'Please select a valid folder to upload in,files should not be uploaded to root'));
+  }
+}
+  const onFileOpen = args => {
+    const folderId = args.fileDetails.folderId ?? null;
+    setCurrentFolderId(folderId);
+    setCurrentFileId(null);
+    setInfoMode('none');
+    if (folderId) {
+      fileObj.current.enableToolbarItems(['upload']);
+    } else {
+      fileObj.current.disableToolbarItems(['upload']);
+    }
+  };
+
   const onFileSelect = (args) => {
     if (!args.fileDetails.folderId) {
       setCurrentFileId(args.fileDetails.fileId);
+      console.log(args.fileDetails.fileId);
+      setCurrentFileName(args.fileDetails.name);
+      console.log(args.fileDetails.tags);
       setCurrentFolderId(null);
-    } else {
-      setCurrentFolderId(args.fileDetails.folderId);
-      setCurrentFileId(null);
+          fileObj.current.enableToolbarItems(['download']);
+      console.log(args.fileDetails.metadata);
+      setFileInfo({
+        name: args.fileDetails.name,
+        metadata: args.fileDetails.tags || '',
+        size: args.fileDetails.size || ''
+      });
+      setInfoMode('view');
     }
+    else {
+      setInfoMode('none');
+      setCurrentFileId(null);
+      fileObj.current.disableToolbarItems(['download']);
+    }
+
+
+  };
+  const handleMetadataSave = async () => {
+  try {
+    const res = await fetch(`${hostUrl}/api/filemanager/update-metadata`, {
+      method: 'PUT', // or POST depending on your endpoint
+      headers: { 'Content-Type': 'application/json', 'Authorization': token },
+      body: JSON.stringify({ fileId: currentFileId, metadata: fileInfo.metadata })
+    });
+    if (!res.ok) {
+      // Show error from server or fallback message
+      const errorData = await res.json().catch(() => null);
+      const message = (errorData && errorData.error) || 'Internal server error';
+      alert(message);
+      return;
+    }
+    alert("Success")
+    setInfoMode('none');
+  } catch (err) {
+    console.error('Metadata save failed:', err);
+    alert('Internal server error');
+  }
   };
 
   return (
