@@ -7,6 +7,7 @@ const cors = require("cors");
 
 const fileManagerRoutes = require("./routes/fileManager");
 const searchRoutes = require("./routes/searchRoutes");
+const adminRoutes = require("./routes/adminApplication");
 const app = express();
 
 app.use(cors({  allowedHeaders: ['Content-Type','Authorization','X-Folder-Id','X-File-Id','X-Tags']}));
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use("/api/filemanager", fileManagerRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/admin", adminRoutes);
 // Default error handler
 app.use((err, req, res, next) => {
   console.error("Server error:", err);

@@ -2,37 +2,39 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useDarkMode } from '../context/DarkModeContext';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { UserAuth } from '../context/AuthContext';
+
 
 const AdminApplication = () => {
   const form = useRef();
   const { darkMode } = useDarkMode();
-
+ 
+ const { session } = UserAuth();
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [status, setStatus] = useState('');
   const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState('');
+
+  const hostUrl = 'http://localhost:5000/api/admin';
 
   // ✅ Extracted status check into a function
-  const checkApplication = async (uid) => {
-    const { data, error } = await supabase
-      .from('applications')
-      .select('*')
-      .eq('user_id', uid)
-      .order('created_at', { ascending: false })
-      .limit(1);
+  const checkApplication = async (token) => {
+    const response = await fetch(`${hostUrl}/application`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) {
-      console.error('Error checking applications:', error.message);
-      return;
-    }
+    const data = await response.json();
 
-    if (data && data.length > 0) {
+    if (data.alreadyApplied) {
       setAlreadyApplied(true);
-      const latest = data[0];
-      const accepted = latest.is_accepted === true;
-      const denied = latest.is_denied === true;
+      const accepted = data.is_accepted;
+      const denied = data.is_denied;
 
       if (accepted) setStatus('accepted');
       else if (denied) setStatus('denied');
@@ -45,14 +47,13 @@ const AdminApplication = () => {
 
   useEffect(() => {
     const fetchSessionAndCheck = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const uid = sessionData?.session?.user?.id;
-      setUserId(uid);
-      if (uid) await checkApplication(uid);
+      setToken(session?.access_token);
+      setUserId(session?.user?.id);
+      if (token) await checkApplication(token);
     };
 
     fetchSessionAndCheck();
-  }, []);
+  }, [token]);
 
   const validate = () => {
     const formData = new FormData(form.current);
@@ -78,24 +79,32 @@ const AdminApplication = () => {
     const name = formData.get('user_name');
     const motivation = formData.get('motivation');
 
-    const { error } = await supabase.from('applications').insert([
-      {
-        user_id: userId,
-        user_name: name,
-        motivation: motivation,
-        is_accepted: false,
-        is_denied: false,
-      },
-    ]);
+    try{
+      const response = await fetch(`${hostUrl}/submit-application`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `${token}`, // or just token if your backend expects it that way
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: userId,
+          user_name: name,
+          motivation: motivation,
+        }),
+      });
 
-    if (error) {
-      console.error('Error submitting application:', error.message);
-    } else {
-      form.current.reset();
-      await checkApplication(userId); // ✅ Recheck application after submission
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error submitting application:', errorData.error);
+      } else {
+        form.current.reset();
+        await checkApplication(token); // Recheck application after submission
+      }
+  } catch (error) {
+    console.error('Error submitting application:', error.message);
+  }
 
-    setLoading(false);
+  setLoading(false);
   };
 
   const renderStatusMessage = () => {
