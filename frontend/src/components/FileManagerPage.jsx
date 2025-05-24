@@ -24,7 +24,7 @@ export default function FileManagerPage() {
   const { darkMode } = useDarkMode();
 
   const token   = session?.access_token || '';
-  const hostUrl = 'http://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net';
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net';
 
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
