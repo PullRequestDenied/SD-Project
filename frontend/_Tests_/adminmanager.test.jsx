@@ -1,159 +1,223 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import SearchPageLayout from '../src/components/SearchPage';
-import SearchFilters from '../src/components/SearchFilters';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import AdminManager from '../src/components/AdminManager';
-import { vi, describe, it, expect } from 'vitest';
-import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom/vitest';
 
-vi.mock('react-select/async', () => ({
-  default: ({ loadOptions, onChange }) => {
-    return (
-      <input
-        data-testid="search-input"
-        onChange={async (e) => {
-          const options = await loadOptions(e.target.value);
-          onChange(options[0]);
-        }}
-      />
-    );
-  }
-}));
-
-vi.mock('@mui/x-date-pickers/LocalizationProvider', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    LocalizationProvider: ({ children }) => <div>{children}</div>
-  };
-});
-
-vi.mock('@mui/x-date-pickers/AdapterDateFns', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual
-  };
-});
-
-vi.mock('@mui/x-date-pickers/DatePicker', () => ({
-  DatePicker: ({ label, onChange }) => (
-    <input
-      aria-label={label}
-      type="date"
-      onChange={(e) => onChange(new Date(e.target.value))}
-    />
-  )
-}));
-
+// Mock dependencies
 vi.mock('../src/context/DarkModeContext', () => ({
-  useDarkMode: () => ({ darkMode: false })
+  useDarkMode: () => ({ darkMode: false }),
+}));
+vi.mock('../src/context/AuthContext', () => ({
+  UserAuth: vi.fn(),
+}));
+vi.mock('../src/components/AdminUserCard', () => ({
+  __esModule: true,
+  default: ({ name, email, isAdmin, onToggle, onReject, motivation }) => (
+    <div>
+      <span>{name}</span>
+      <span>{email}</span>
+      <span>{isAdmin ? 'Admin' : 'User'}</span>
+      <button onClick={onToggle}>{isAdmin ? 'Demote' : 'Promote'}</button>
+      {onReject && <button onClick={onReject}>Reject</button>}
+      {motivation && <span>{motivation}</span>}
+    </div>
+  ),
 }));
 
-vi.mock('../src/supabaseClient', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => Promise.resolve({ data: [], error: null })),
-      update: vi.fn(() => Promise.resolve({ error: null })),
-      delete: vi.fn(() => Promise.resolve({ error: null })),
-      insert: vi.fn(() => Promise.resolve({ error: null })),
-      eq: vi.fn().mockReturnThis()
-    }))
-  }
-}));
-
-global.fetch = vi.fn();
-
-describe('SearchPageLayout', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('renders search input and buttons', () => {
-    render(<SearchPageLayout token="dummy" />);
-
-    expect(screen.getByTestId('search-input')).not.toBeNull();
-    expect(screen.getByRole('button', { name: /filters/i })).not.toBeNull();
-    expect(screen.getByRole('button', { name: /search/i })).not.toBeNull();
-  });
-
-  it('calls search API and displays results', async () => {
-    fetch.mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ results: [{ id: '1', filename: 'file.txt', created_at: new Date().toISOString() }] })
-      })
-    );
-
-    render(<SearchPageLayout token="dummy" />);
-    fireEvent.click(screen.getByRole('button', { name: /search/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('file.txt')).not.toBeNull();
-    });
-  });
-
-  it('displays summary when summarize button clicked', async () => {
-    fetch
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ results: [{ id: '1', filename: 'file.txt', created_at: new Date().toISOString() }] })
-        })
-      )
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ summary: 'Mock summary text.' })
-        })
-      );
-
-    render(<SearchPageLayout token="dummy" />);
-    fireEvent.click(screen.getByRole('button', { name: /search/i }));
-
-    await waitFor(() => screen.getByText('file.txt'));
-
-    fireEvent.click(screen.getByRole('button', { name: /summarize/i }));
-
-    await waitFor(() => screen.getByText(/summary for file.txt/i));
-    expect(screen.getByText('Mock summary text.')).not.toBeNull();
-  });
-});
-
-describe('SearchFilters', () => {
-  it('renders inputs and calls onSearch with correct params', async () => {
-    const onSearch = vi.fn();
-    render(<SearchFilters token="dummy" onSearch={onSearch} />);
-
-    const fromInput = screen.getByLabelText('From');
-    const toInput = screen.getByLabelText('To');
-    const searchButton = screen.getByRole('button', { name: /search/i });
-
-    await userEvent.type(fromInput, '2024-01-01');
-    await userEvent.type(toInput, '2024-01-31');
-
-    fireEvent.mouseDown(screen.getByLabelText('Type'));
-    const option = await screen.findByText('PDF');
-    fireEvent.click(option);
-
-    await userEvent.click(searchButton);
-
-    await waitFor(() => {
-      expect(onSearch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          term: '',
-          from: expect.any(String),
-          to: expect.any(String),
-        })
-      );
-    });
-  });
-});
+import { UserAuth } from '../src/context/AuthContext';
 
 describe('AdminManager', () => {
-  it('renders loading initially and then shows fallback when no users', async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    UserAuth.mockImplementation(() => ({
+      session: {
+        access_token: 'token',
+        user: {
+          id: 'admin-id',
+          email: 'admin@example.com',
+          user_metadata: { display_name: 'AdminUser' },
+        },
+      },
+    }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('shows loading and then fallback when no users', async () => {
+    global.fetch = vi.fn()
+      // getAuth
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      })
+      // getRoles
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
     render(<AdminManager />);
-    expect(screen.getByText(/loading users/i)).not.toBeNull();
+    expect(screen.getByText(/loading users/i)).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByText(/no users found/i)).not.toBeNull();
+      expect(screen.getByText(/no users found/i)).toBeInTheDocument();
+    });
+  });
+
+  it('renders admin and non-admin users', async () => {
+    global.fetch = vi.fn()
+      // getAuth
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { user_id: '1', user_name: 'Alice', is_denied: false, motivation: 'mot1' },
+          { user_id: '2', user_name: 'Bob', is_denied: false, motivation: 'mot2' },
+        ],
+      })
+      // getRoles
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { user_id: '1', role: 'admin' },
+          { user_id: '2', role: 'user' },
+        ],
+      });
+
+    render(<AdminManager />);
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+    expect(screen.getAllByText(/mot/i).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('Admin')).toBeInTheDocument();
+    expect(screen.getByText('User')).toBeInTheDocument();
+  });
+
+  it('shows error if fetching users fails', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AdminManager />);
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Error fetching users:', 'Failed to fetch users from API'
+      );
+    });
+    errorSpy.mockRestore();
+  });
+
+  it('shows error if fetching roles fails', async () => {
+    global.fetch = vi.fn()
+      // getAuth
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { user_id: '1', user_name: 'Alice', is_denied: false },
+        ],
+      })
+      // getRoles
+      .mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AdminManager />);
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Error fetching user_roles:', 'Failed to fetch user roles from API'
+      );
+    });
+    errorSpy.mockRestore();
+  });
+
+  it('promotes a user to admin', async () => {
+    global.fetch = vi.fn()
+      // getAuth
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { user_id: '2', user_name: 'Bob', is_denied: false },
+        ],
+      })
+      // getRoles
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      })
+      // add-admin
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
+    render(<AdminManager />);
+    const promoteBtn = await screen.findByText('Promote');
+    fireEvent.click(promoteBtn);
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/add-admin'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({ Authorization: 'token' }),
+        })
+      );
+    });
+  });
+
+  it('demotes an admin to user', async () => {
+    global.fetch = vi.fn()
+      // getAuth
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { user_id: '1', user_name: 'Alice', is_denied: false },
+        ],
+      })
+      // getRoles
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { user_id: '1', role: 'admin' },
+        ],
+      })
+      // remove-admin
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
+    render(<AdminManager />);
+    const demoteBtn = await screen.findByText('Demote');
+    fireEvent.click(demoteBtn);
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/remove-admin'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({ Authorization: 'token' }),
+        })
+      );
+    });
+  });
+
+  it('rejects a user', async () => {
+    global.fetch = vi.fn()
+      // getAuth
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { user_id: '2', user_name: 'Bob', is_denied: false },
+        ],
+      })
+      // getRoles
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      })
+      // reject-user
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
+    render(<AdminManager />);
+    const rejectBtn = await screen.findByText('Reject');
+    fireEvent.click(rejectBtn);
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/reject-user'),
+        expect.objectContaining({
+          method: 'PUT',
+          headers: expect.objectContaining({ Authorization: 'token' }),
+        })
+      );
     });
   });
 });
