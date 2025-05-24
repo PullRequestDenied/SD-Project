@@ -1,37 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 
-// ✅ Mock: react-router's useNavigate
+// Mock: react-router's useNavigate
 const mockNavigate = vi.fn();
 
-const mockSelect = vi.fn();
-const mockEq = vi.fn();
-const mockOrder = vi.fn();
-const mockLimit = vi.fn();
-const mockInsert = vi.fn();
-
-const mockFromReturn = {
-  select: mockSelect,
-  eq: mockEq,
-  order: mockOrder,
-  limit: mockLimit,
-  insert: mockInsert,
-};
-
-vi.mock('../src/supabaseClient', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn(),
-    },
-    from: () => mockFromReturn,
-  },
+// Mock: UserAuth
+vi.mock('../src/context/AuthContext', () => ({
+  UserAuth: vi.fn()
 }));
 
-import { supabase } from '../src/supabaseClient';
-
-// Mock DarkModeContext if used
+// Mock: DarkModeContext
 vi.mock('../src/context/DarkModeContext', () => ({
   useDarkMode: () => ({ darkMode: false }),
 }));
@@ -44,43 +24,45 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// ✅ Mock: UserAuth
-vi.mock('../src/context/AuthContext', () => ({
-  UserAuth: vi.fn()
-}));
-
 import AdminApplication from '../src/components/AdminApplication';
-
 import { UserAuth } from '../src/context/AuthContext';
 
 describe('AdminApplication', () => {
   beforeEach(() => {
-    mockNavigate.mockReset();    
-    supabase.auth.getSession.mockResolvedValue({
-        data: { session: { user: { id: 'user1' } } }
+    mockNavigate.mockReset();
+
+    UserAuth.mockImplementation(() => ({
+      session: {
+        access_token: 'token',
+        user: {
+          email: 'test@example.com',
+          username: 'testuser',
+          user_metadata: {
+            display_name: 'TestUser'
+          }
+        }
+      }
+    }));
+
+    global.fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        alreadyApplied: false,
+        is_accepted: false,
+        is_denied: false,
+      }),
+      ok: true,
     });
-    mockSelect.mockReturnValue(mockFromReturn);
-    mockEq.mockReturnValue(mockFromReturn);
-    mockOrder.mockReturnValue(mockFromReturn);
-    mockLimit.mockResolvedValue({ data: [], error: null });
-    // ...other setup
-        // UserAuth.mockImplementation(() => ({
-        //   session: {
-        //     user: {
-        //       user_metadata: {
-        //         display_name: 'TestUser'
-        //       }
-        //     }
-        //   },
-        //   signOut: mockSignOut
-        // }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('renders the form when user has not applied', async () => {
     render(
-        <MemoryRouter>
-                <AdminApplication />
-        </MemoryRouter>
+      <MemoryRouter>
+        <AdminApplication />
+      </MemoryRouter>
     );
     expect(await screen.findByText(/Admin Application/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Your Name/i)).toBeInTheDocument();
@@ -90,9 +72,9 @@ describe('AdminApplication', () => {
 
   it('shows validation errors if fields are empty', async () => {
     render(
-        <MemoryRouter>
-                <AdminApplication />
-        </MemoryRouter>
+      <MemoryRouter>
+        <AdminApplication />
+      </MemoryRouter>
     );
     fireEvent.click(screen.getByRole('button', { name: /Submit Application/i }));
     expect(await screen.findByText(/Name is required/i)).toBeInTheDocument();
@@ -101,55 +83,65 @@ describe('AdminApplication', () => {
 
   it('submits the form and disables button while loading', async () => {
     render(
-       <MemoryRouter>
-               <AdminApplication />
-       </MemoryRouter>
-   );
+      <MemoryRouter>
+        <AdminApplication />
+      </MemoryRouter>
+    );
     fireEvent.change(screen.getByPlaceholderText(/Your Name/i), { target: { value: 'Alice' } });
     fireEvent.change(screen.getByPlaceholderText(/motivation/i), { target: { value: 'I want to help.' } });
     fireEvent.click(screen.getByRole('button', { name: /Submit Application/i }));
-    // await waitFor(() => {
-    //   expect(supabase.from.insert).toHaveBeenCalled();
-    // });
     expect(screen.getByRole('button', { name: /Submit Application/i })).not.toBeDisabled();
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
   });
 
   it('shows accepted status if application is accepted', async () => {
-    mockLimit.mockResolvedValue({
-      data: [{ is_accepted: true, is_denied: false }],
-      error: null,
+    global.fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        alreadyApplied: true,
+        is_accepted: true,
+        is_denied: false,
+      }),
+      ok: true,
     });
     render(
-        <MemoryRouter>
-                <AdminApplication />
-        </MemoryRouter>
-   );
-    expect(await screen.findByText(/Your application has been accepted/i)).toBeInTheDocument();
+      <MemoryRouter>
+        <AdminApplication />
+      </MemoryRouter>
+    );
+    expect(await screen.findByText(/has been accepted/i)).toBeInTheDocument();
   });
 
   it('shows denied status if application is denied', async () => {
-    mockLimit.mockResolvedValue({
-      data: [{ is_accepted: false, is_denied: true }],
-      error: null,
+    global.fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        alreadyApplied: true,
+        is_accepted: false,
+        is_denied: true,
+      }),
+      ok: true,
     });
     render(
-        <MemoryRouter>
-                <AdminApplication />
-        </MemoryRouter>
-   );
+      <MemoryRouter>
+        <AdminApplication />
+      </MemoryRouter>
+    );
     expect(await screen.findByText(/was denied/i)).toBeInTheDocument();
   });
 
   it('shows pending status if application is pending', async () => {
-    mockLimit.mockResolvedValue({
-      data: [{ is_accepted: false, is_denied: false }],
-      error: null,
+    global.fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        alreadyApplied: true,
+        is_accepted: false,
+        is_denied: false,
+      }),
+      ok: true,
     });
     render(
-        <MemoryRouter>
-                <AdminApplication />
-        </MemoryRouter>
-   );
+      <MemoryRouter>
+        <AdminApplication />
+      </MemoryRouter>
+    );
     expect(await screen.findByText(/under review/i)).toBeInTheDocument();
   });
 
@@ -159,10 +151,10 @@ describe('AdminApplication', () => {
     }));
     const { default: AdminApplicationDark } = await import('../src/components/AdminApplication');
     const { container } = render(
-        <MemoryRouter>
-                <AdminApplication />
-        </MemoryRouter>
-   );;
-    expect(container.firstChild).toHaveClass('bg-gray-100');
+      <MemoryRouter>
+        <AdminApplicationDark />
+      </MemoryRouter>
+    );
+    expect(container.firstChild).toHaveClass('bg-gray-100'); // Adjust if your dark mode class is different
   });
 });

@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">82.44% </span>
+                <span class="strong">82.17% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>108/131</span>
+                <span class='fraction'>106/129</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.66% </span>
+                <span class="strong">17.64% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>3/18</span>
+                <span class='fraction'>3/17</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">82.44% </span>
+                <span class="strong">82.17% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>108/131</span>
+                <span class='fraction'>106/129</span>
             </div>
         
             
@@ -287,7 +287,8 @@
 <a name='L222'></a><a href='#L222'>222</a>
 <a name='L223'></a><a href='#L223'>223</a>
 <a name='L224'></a><a href='#L224'>224</a>
-<a name='L225'></a><a href='#L225'>225</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -394,19 +395,20 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -615,9 +617,10 @@ export default function LandingPage() {
 &nbsp;
           {/* Logo / Title */}
           &lt;header
-            className={`text-sm font-semibold tracking-wide uppercase whitespace-pre-line leading-5 mb-8 ${!sidebarOpen ? <span class="branch-0 cbranch-no" title="branch not covered" >'text-center text-xs' : ''}`}</span>
+            className={`text-xl font-semibold tracking-wide whitespace-pre-line leading-5 mb-8 ${!sidebarOpen ? <span class="branch-0 cbranch-no" title="branch not covered" >'text-center' : ''}`}</span>
           &gt;
-            {<span class="branch-0 cbranch-no" title="branch not covered" >sidebarOpen ? 'Constitutional\nArchive' : '</span>CA'}
+            {<span class="branch-0 cbranch-no" title="branch not covered" >sidebarOpen ? 'Consti-' : '</span>C'}
+            &lt;span className="text-indigo-500"&gt;Q&lt;/span&gt;
           &lt;/header&gt;
 &nbsp;
           &lt;ul className="space-y-2"&gt;
@@ -628,11 +631,11 @@ export default function LandingPage() {
                 &lt;/button&gt;
               &lt;/Link&gt;
 &nbsp;
-              &lt;Link to="/" className="w-full block"&gt;
+              {/* &lt;Link to="/" className="w-full block"&gt;
                 &lt;button 
-                className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white"&gt;{<span class="branch-0 cbranch-no" title="branch not covered" >sidebarOpen ? 'Library' : &lt;</span>FontAwesomeIcon icon={faBookmark} /&gt;}
+                className="w-full text-sm hover:!border-cyan-600 py-2 rounded-md transition text-white dark:text-white"&gt;{sidebarOpen ? 'Library' : &lt;FontAwesomeIcon icon={faBookmark} /&gt;}
                 &lt;/button&gt;
-              &lt;/Link&gt;
+              &lt;/Link&gt; */}
 &nbsp;
             
           &lt;/ul&gt;
@@ -742,7 +745,7 @@ export default function LandingPage() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-18T21:38:30.479Z
+                at 2025-05-24T18:26:41.450Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
