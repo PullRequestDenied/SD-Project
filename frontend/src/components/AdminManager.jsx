@@ -1,72 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
 import AdminUserCard from './AdminUserCard';
 import { useDarkMode } from '../context/DarkModeContext'; 
+import { UserAuth } from '../context/AuthContext';
 
 const AdminManager = () => {
   const [admins, setAdmins] = useState([]);
   const [nonAdmins, setNonAdmins] = useState([]);
   const [adminIds, setAdminIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState('');
+  const [userId, setUserId] = useState('');
   const { darkMode } = useDarkMode(); 
+  const { session } = UserAuth();
+
+  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net/api/admin';
+
+   useEffect(() => {
+      const fetchSessionAndCheck = async () => {
+        setToken(session?.access_token);
+        setUserId(session?.user?.id);
+      };
+  
+      fetchSessionAndCheck();
+    }, [token]);
 
   useEffect(() => {
-    // const fetchUsersAndAdmins = async () => {
-    //   setLoading(true);
-
-    //   // Fetch all authenticated users
-    //   const { data: userResponse, error: userError } = await supabaseAdmin.auth.admin.listUsers();
-    //   if (userError) {
-    //     console.error('Error fetching users:', userError.message);
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   const authUsers = userResponse?.users || [];
-
-    //   // Fetch user_roles to identify admins
-    //   const { data: roleData, error: roleError } = await supabaseAdmin.from('user_roles').select('*');
-    //   if (roleError) {
-    //     console.error('Error fetching user_roles:', roleError.message);
-    //     setLoading(false);
-    //     return;
-    //   }
-
-    //   // Build admin ID set
-    //   const adminSet = new Set(
-    //     (roleData || [])
-    //       .filter((r) => r.role === 'admin')
-    //       .map((r) => String(r.user_id).trim())
-    //   );
-    //   setAdminIds(adminSet);
-
-    //   // Separate users into admin and non-admin lists
-    //   const adminsList = [];
-    //   const nonAdminsList = [];
-
-    //   authUsers.forEach((user) => {
-    //     const id = String(user.id).trim();
-    //     const userObj = {
-    //       id,
-    //       name: user.user_metadata?.display_name || 'Unnamed User',
-    //       email: user.email || 'No email',
-    //       isAdmin: adminSet.has(id),
-    //     };
-
-    //     userObj.isAdmin ? adminsList.push(userObj) : nonAdminsList.push(userObj);
-    //   });
-
-    //   setAdmins(adminsList);
-    //   setNonAdmins(nonAdminsList);
-    //   setLoading(false);
-    // };
 
     const fetchUsersAndAdmins = async () => {
       setLoading(true);
 
-      // Fetch all authenticated users
-      const { data: userResponse, error: userError } = await supabase.from('applications').select('*');
-      if (userError) {
-        console.error('Error fetching users:', userError.message);
+      // Fetch all authenticated users from the API
+      let userResponse = [];
+      try {
+        const res = await fetch(`${hostUrl}/getAuth`);
+        if (!res.ok) throw new Error('Failed to fetch users from API');
+        userResponse = await res.json();
+      } catch (err) {
+        console.error('Error fetching users:', err.message);
         setLoading(false);
         return;
       }
@@ -80,10 +50,14 @@ const AdminManager = () => {
           motivation: r.motivation || '',
         }));
 
-      // Fetch user_roles to identify admins
-      const { data: roleData, error: roleError } = await supabase.from('user_roles').select('*');
-      if (roleError) {
-        console.error('Error fetching user_roles:', roleError.message);
+      // Fetch user_roles to identify admins using the API endpoint
+      let roleData = [];
+      try {
+        const res = await fetch(`${hostUrl}/getRoles`);
+        if (!res.ok) throw new Error('Failed to fetch user roles from API');
+        roleData = await res.json();
+      } catch (err) {
+        console.error('Error fetching user_roles:', err.message);
         setLoading(false);
         return;
       }
@@ -125,16 +99,24 @@ const AdminManager = () => {
     const isCurrentlyAdmin = adminIds.has(id);
 
     if (isCurrentlyAdmin) {
-      // Remove admin
-      const { error: userError } = await supabase.from('applications')
-        .update({ is_accepted: false })
-        .eq('user_id', id);
-
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', id)
-        .eq('role', 'admin');
+      // Remove admin using API endpoint
+      let error = null;
+      try {
+        const res = await fetch(`${hostUrl}/remove-admin`, {
+          method: 'POST',
+          headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`,
+          },
+          body: JSON.stringify({ id: id }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          error = { message: data?.error || 'Failed to remove admin' };
+        }
+      } catch (err) {
+        error = { message: err.message };
+      }
 
       if (!error) {
         setAdminIds((prev) => {
@@ -148,14 +130,24 @@ const AdminManager = () => {
         setNonAdmins((prev) => [...prev, removed]);
       }
     } else {
-      // Add admin
-      const { error: userError } = await supabase.from('applications')
-        .update({ is_accepted: true })
-        .eq('user_id', id);
-
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({ user_id: id, role: 'admin' });
+      // Add admin using API endpoint
+      let error = null;
+      try {
+        const res = await fetch(`${hostUrl}/add-admin`, {
+          method: 'POST',
+          headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`,
+          },
+          body: JSON.stringify({ id: id }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          error = { message: data?.error || 'Failed to add admin' };
+        }
+      } catch (err) {
+        error = { message: err.message };
+      }
 
       if (!error) {
         setAdminIds((prev) => new Set(prev).add(id));
@@ -171,10 +163,23 @@ const AdminManager = () => {
   const handleReject = async (userId) => {
     const id = String(userId).trim();
 
-    const { error } = await supabase
-      .from('applications')
-      .update({ is_denied: true })
-      .eq('user_id', id);
+    let error = null;
+    try {
+      const res = await fetch(`${hostUrl}/reject-user`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`,
+      },
+      body: JSON.stringify({ id: id }),
+      });
+      if (!res.ok) {
+      const data = await res.json();
+      error = { message: data?.error || 'Failed to reject user' };
+      }
+    } catch (err) {
+      error = { message: err.message };
+    }
 
     if (error) {
       console.error('Failed to reject user:', error.message);
@@ -183,7 +188,6 @@ const AdminManager = () => {
 
     const rejected = nonAdmins.find((u) => u.id === id);
     setNonAdmins((prev) => prev.filter((u) => u.id !== id));
-    console.log(`✅ Rejected user ${id}`);
   };
 
   return (
