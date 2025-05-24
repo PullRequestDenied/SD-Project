@@ -77,17 +77,7 @@ function onFailure(args) {
     alert('File upload failed: ' + (args.error?.message || 'Please select a valid folder to upload in,files should not be uploaded to root'));
   }
 }
-  const onFileOpen = args => {
-    const folderId = args.fileDetails.folderId ?? null;
-    setCurrentFolderId(folderId);
-    setCurrentFileId(null);
-    setInfoMode('none');
-    if (folderId) {
-      fileObj.current.enableToolbarItems(['upload']);
-    } else {
-      fileObj.current.disableToolbarItems(['upload']);
-    }
-  };
+
 
   const onFileSelect = (args) => {
     if (!args.fileDetails.folderId) {
@@ -96,7 +86,7 @@ function onFailure(args) {
       setCurrentFileName(args.fileDetails.name);
       console.log(args.fileDetails.tags);
       setCurrentFolderId(null);
-          fileObj.current.enableToolbarItems(['download']);
+ 
       console.log(args.fileDetails.metadata);
       setFileInfo({
         name: args.fileDetails.name,
@@ -107,8 +97,9 @@ function onFailure(args) {
     }
     else {
       setInfoMode('none');
+      setCurrentFolderId(args.fileDetails.folderId);
       setCurrentFileId(null);
-      fileObj.current.disableToolbarItems(['download']);
+
     }
 
 
@@ -139,7 +130,7 @@ function onFailure(args) {
     <div className="control-section">
 <FileManagerComponent
 
-           ref={fileObj}
+  ref={fileObj}
   style={{ backgroundColor: 'white' }}
   id="file-manager"
   height="375px"
@@ -151,12 +142,11 @@ function onFailure(args) {
   }}
   failure={onFailure}
   beforeSend={handleBeforeSend}
-  fileOpen={onFileOpen}
+
   fileSelect={onFileSelect}
   beforeDownload={beforeDownload}
 
   
-  toolbarSettings={{ items: ['NewFolder','Upload','Cut','Copy','Delete','Download','Rename','Refresh'] }}
 >
   {/* inject just the navigation tree and details‐view */}
   <Inject services={[NavigationPane, DetailsView, Toolbar, ContextMenu]} />
