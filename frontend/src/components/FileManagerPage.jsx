@@ -26,7 +26,7 @@ export default function FileManagerPage() {
   const hostUrl = 'http://localhost:5000';
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
-      ajaxArgs.httpRequest.setRequestHeader("Authorization", `${token}`);
+      ajaxArgs.httpRequest.setRequestHeader("Authorization", token);
 
       ajaxArgs.httpRequest.setRequestHeader("X-Folder-Id", currentFolderId);
       ajaxArgs.httpRequest.setRequestHeader("X-File-Id", currentFileId);
@@ -92,8 +92,9 @@ function onFailure(args) {
   const onFileSelect = (args) => {
     if (!args.fileDetails.folderId) {
       setCurrentFileId(args.fileDetails.fileId);
+      console.log(args.fileDetails.fileId);
       setCurrentFileName(args.fileDetails.name);
-            console.log(args.fileDetails.tags);
+      console.log(args.fileDetails.tags);
       setCurrentFolderId(null);
           fileObj.current.enableToolbarItems(['download']);
       console.log(args.fileDetails.metadata);
@@ -160,81 +161,78 @@ function onFailure(args) {
   {/* inject just the navigation tree and details‐view */}
   <Inject services={[NavigationPane, DetailsView, Toolbar, ContextMenu]} />
 </FileManagerComponent>
-<div
-  style={{
-    backgroundColor: 'white',
-    padding: '12px',
-    marginTop: '16px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-  }}
->
-  <label
-    htmlFor="tags-input"
-    style={{
-      display: 'block',
-      marginBottom: '4px',
-      fontSize: '1.1rem',   
-      color: '#000',        
-      fontWeight: 500,       
-    }}
-  >
-    Tags (comma-separated) (Enter your tags before uploading a file)
-  </label>
-  <input
-    id="tags-input"
-    type="text"
-    placeholder="e.g. invoice, Q2, finance"
-    value={tagsInput}
-    onChange={e => setTagsInput(e.target.value)}
-    style={{
-      width: '100%',
-      padding: '10px',        // a tad more padding
-      fontSize: '1.125rem',   // ↑ larger text
-      color: '#000',          // ↑ black
-      border: '1px solid #ccc',
-      borderRadius: '4px',
-      outline: 'none',
-    }}
-  />
-  
-      {infoMode !== 'none' && (
-        <div style={{ marginTop: 16, padding: 12, border: '1px solid #ccc', borderRadius: 4,color: '#000' }}>
-          <select
-            value={infoMode}
-            onChange={e => setInfoMode(e.target.value)}
-            style={{ marginBottom: 8, padding: 4 }}
-          >
-            <option value="view">File Information</option>
-            <option value="none">Hide</option>
-          </select>
+      <div
+        style={{
+          backgroundColor: 'white',
+          padding: '12px',
+          marginTop: '16px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+        }}
+      >
+        <label
+          htmlFor="tags-input"
+          style={{
+            display: 'block',
+            marginBottom: '4px',
+            fontSize: '1.1rem',
+            color: '#000',
+            fontWeight: 500,
+          }}
+        >
+          Tags (comma-separated) (Enter your tags before uploading a file)
+        </label>
+        <input
+          id="tags-input"
+          type="text"
+          placeholder="e.g. invoice, Q2, finance"
+          value={tagsInput}
+          onChange={e => setTagsInput(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '10px',
+            fontSize: '1.125rem',
+            color: '#000',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            outline: 'none',
+          }}
+        />
 
-          {infoMode === 'view' && (
-            <div>
-              <p><strong>Name:</strong> {fileInfo.name}</p>
-              <p><strong>Size:</strong> {fileInfo.size}</p>
-              <label>
-                Metadata: (Edit tags if necessary)
-                <input
-                  type="text"
-                  value={fileInfo.metadata}
-                  onChange={e => setFileInfo({ ...fileInfo, metadata: e.target.value })}
-                  style={{ width: '100%', marginTop: 4, marginBottom: 8 }}
-                />
-              </label>
+        {infoMode !== 'none' && (
+          <div style={{ marginTop: 16, padding: 12, border: '1px solid #ccc', borderRadius: 4, color: '#000' }}>
+            <select
+              value={infoMode}
+              onChange={e => setInfoMode(e.target.value)}
+              style={{ marginBottom: 8, padding: 4 }}
+            >
+              <option value="view">File Information</option>
+              <option value="none">Hide</option>
+            </select>
+
+            {infoMode === 'view' && (
               <div>
-                <button onClick={handleMetadataSave} style={{ marginRight: 8 }}>Save</button>
-                <button onClick={() => setInfoMode('none')}>Cancel</button>
+                <p><strong>Name:</strong> {fileInfo.name}</p>
+                <p><strong>Size:</strong> {fileInfo.size}</p>
+                <label>
+                  Metadata: (Edit tags if necessary)
+                  <input
+                    type="text"
+                    value={fileInfo.metadata}
+                    onChange={e => setFileInfo({ ...fileInfo, metadata: e.target.value })}
+                    style={{ width: '100%', marginTop: 4, marginBottom: 8 }}
+                  />
+                </label>
+                <div>
+                  <button onClick={handleMetadataSave} style={{ marginRight: 8 }}>Save</button>
+                  <button onClick={() => setInfoMode('none')}>Cancel</button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
-  
-</div>
+            )}
+          </div>
+        )}
 
-
+      </div>
     </div>
-    
   );
 }
