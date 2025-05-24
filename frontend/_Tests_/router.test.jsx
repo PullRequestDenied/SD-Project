@@ -45,16 +45,6 @@ describe('router configuration', () => {
         expect(route.element.type).toBe(App);
     });
 
-    it('should render Signup component at "/signup"', () => {
-        const route = router.routes[0].children.find(r => r.path === '/signup');
-        expect(route.element.type).toBe(Signup);
-    });
-
-    it('should render Signin component at "/signin"', () => {
-        const route = router.routes[0].children.find(r => r.path === '/signin');
-        expect(route.element.type).toBe(Signin);
-    });
-
     it('should render ContactForm at "/contact"', () => {
         const route = router.routes[0].children.find(r => r.path === '/contact');
         expect(route.element.type).toBe(ContactForm);

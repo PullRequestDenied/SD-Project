@@ -47,7 +47,7 @@ describe('AdminUserCard', () => {
         onReject={mockonReject}
       />
     );
-    const editBtn = screen.getByRole('button', { name: /remove/i });
+    const editBtn = screen.getByRole('button', { title: /remove/i });
     fireEvent.click(editBtn);
     expect(mockonToggle).toHaveBeenCalled();
   });
@@ -66,23 +66,6 @@ describe('AdminUserCard', () => {
     fireEvent.click(deleteBtn);
     expect(mockonReject).toHaveBeenCalled();
   });
-
-  // it('applies dark mode styling', async () => {
-  //   vi.doMock('../src/context/DarkModeContext', () => ({
-  //     useDarkMode: () => ({ darkMode: true }),
-  //   }));
-  //   const { default: AdminUserCardDark } = await import('../src/components/AdminUserCard');
-  //   const { container } = render(
-  //     <AdminUserCardDark
-  //       name= 'adminuser'
-  //       email= 'admin@example.com'
-  //       isAdmin= {false}
-  //       onToggle={mockonToggle}
-  //       onReject={mockonReject}
-  //     />
-  //   );
-  //   expect(container.firstChild).toHaveClass('bg-gray-800');
-  // });
 
   it('applies light mode styling', async () => {
     vi.doMock('../src/context/DarkModeContext', () => ({

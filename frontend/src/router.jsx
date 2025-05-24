@@ -14,14 +14,16 @@ import AdminManager from './components/AdminManager';
 import AdminApplication from "./components/AdminApplication";
 import AccountDashboard from "./components/AccountDashboard";
 import Layout from "./components/layout";
+import RestrictedRoute from "./components/RestrictedRoute";
+
 export const router = createBrowserRouter([
     {
     path: '/',
     element: <Layout />,
     children: [
     {path: "/", element: <App />},
-    {path: "/signup", element: <Signup />},
-    {path: "/signin", element: <Signin />},
+    {path: "/signup", element: <RestrictedRoute> <Signup /> </RestrictedRoute>},
+    {path: "/signin", element: <RestrictedRoute> <Signin /> </RestrictedRoute>},
     {path: "/dashboard", element: <PrivateRoute> <Dashboard /> </PrivateRoute>},
     {path: "/contact", element: <ContactForm /> },
     {path: "/privacypolicy", element: <PrivacyPolicy /> },
