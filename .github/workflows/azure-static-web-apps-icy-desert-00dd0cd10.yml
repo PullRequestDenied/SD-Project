@@ -34,6 +34,22 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Enforce coverage threshold
+        working-directory: ./frontend
+        run: |
+          npm run coverage
+        env:
+          VITEST_COVERAGE_LINES: 80
+          VITEST_COVERAGE_FUNCTIONS: 80
+          VITEST_COVERAGE_BRANCHES: 80
+          VITEST_COVERAGE_STATEMENTS: 80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: ./frontend/coverage
+
       - name: Write GCP service-account key to api/
         run: |
           cat << 'EOF' > api/copper-moon-387900-f44be043d6f4.json
