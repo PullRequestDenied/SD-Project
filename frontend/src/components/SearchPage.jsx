@@ -440,7 +440,7 @@ export default function SearchPageLayout({ token }) {
             </div>
           </article>
 
-          {currentSummary.loading ? (
+          {/* {currentSummary.loading ? (
             <Box display="flex" justifyContent="center" py={4}>
               <CircularProgress />
             </Box>
@@ -453,11 +453,39 @@ export default function SearchPageLayout({ token }) {
                 <Typography variant="body1">{currentSummary.text}</Typography>
               </Box>
             )
-          )}
+          )} */}
+          </section>
 
-          <Grid container spacing={2}>
-            {results.map(renderCard)}
-          </Grid>
+          <section className="relative z-10 px-4 py-10">
+          <Box className="max-w-6xl mx-auto">
+            {currentSummary.loading ? (
+              <Box display="flex" justifyContent="center" mt={4}>
+                <CircularProgress />
+              </Box>
+            ) : currentSummary.text ? (
+              <Card
+                sx={{
+                  bgcolor: darkMode ? "#1e1e1e" : "#fff",
+                  color: darkMode ? "#fff" : "#000",
+                  mb: 4,
+                }}
+              >
+                <CardContent>
+                  <ShinyText text="Answer" className="text-2xl font-semibold mb-2" />
+                  <Typography variant="body1">{currentSummary.text}</Typography>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {/* Search Results */}
+            <Grid container spacing={2}>
+              {results.map((doc) => (
+                <Grid item xs={12} sm={6} md={4} key={doc.id}>
+                  {renderCard(doc)}
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
         </section>
 
         <Drawer
