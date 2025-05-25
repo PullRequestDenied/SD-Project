@@ -8,8 +8,8 @@ Find what to paste in pdf "How to run locally" which was submitted.
 5. Once installed type "npm run dev", it should run on port 5000
 6. In the frontend directory, create a .env file and paste this:
 Find what to paste in pdf "How to run locally" which was submitted.
-7.Go to the file Filemanagerpage in frontend-src-components and change the link on line 27 from 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net' to 'https://localhost:5000'
-8.Go to the file SearchPage in frontend-src-components and change the link on line 54 from 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net' to 'https://localhost:5000'
+7.Go to the file Filemanagerpage in frontend-src-components and change the link on line 27 from 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net' to 'http://localhost:5000'
+8.Go to the file SearchPage in frontend-src-components and change the link on line 54 from 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net' to 'http://localhost:5000'
 9.Then in the terminal cd to frontend and type "npm install --legacy-peer-deps"
 10.Then run in the frontend by typing "npm run dev"
 11.If u run into any npm run dev issues then delete node modules and pakage-lock.Json and npm install again
