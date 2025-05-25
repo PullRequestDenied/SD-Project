@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">82.17% </span>
+                <span class="strong">80.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>106/129</span>
+                <span class='fraction'>113/140</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40% </span>
+                <span class="strong">28.57% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/5</span>
+                <span class='fraction'>2/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">82.17% </span>
+                <span class="strong">80.71% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>106/129</span>
+                <span class='fraction'>113/140</span>
             </div>
         
             
@@ -288,7 +288,18 @@
 <a name='L223'></a><a href='#L223'>223</a>
 <a name='L224'></a><a href='#L224'>224</a>
 <a name='L225'></a><a href='#L225'>225</a>
-<a name='L226'></a><a href='#L226'>226</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -300,6 +311,7 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -312,6 +324,8 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -350,6 +364,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
@@ -496,7 +515,10 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -517,6 +539,7 @@
 import { UserAuth } from '../context/AuthContext';
 import { Menu, Moon, Sun, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import BlurText from '../assets/BlurText';
 import ShinyText from '../assets/ShinyText';
 import Particles from '../assets/Particals';
@@ -533,10 +556,12 @@ import{faBookmark,faPenToSquare,faFolderOpen,faUser} from '@fortawesome/free-reg
 export default function LandingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const navigate = useNavigate();
   const { session, signOut } = UserAuth();
   const user = session?.user;
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkedAdmin, setCheckedAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // console.log('LandingPage darkMode:', darkMode);
   // useEffect(() =&gt; {
@@ -575,6 +600,11 @@ export default function LandingPage() {
 &nbsp;
     checkAdmin();
   }, [user]);
+  const handleSubmit = <span class="fstat-no" title="function not covered" >(e) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  e.preventDefault()</span>
+<span class="cstat-no" title="statement not covered" >  if (!searchTerm.trim()) return</span>
+<span class="cstat-no" title="statement not covered" >  navigate(`/search?term=${encodeURIComponent(searchTerm.trim())}`)</span>
+<span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 &nbsp;
   return (
@@ -718,16 +748,19 @@ export default function LandingPage() {
         /&gt;
 &nbsp;
           &lt;form
+            onSubmit={handleSubmit}
             className={`flex items-center rounded-full overflow-hidden px-2 py-1 shadow-lg transition-colors ${
 <span class="branch-0 cbranch-no" title="branch not covered" >              darkMode ? 'bg-gray-800' : '</span>bg-white border border-gray-300'
             }`}
           &gt;
             &lt;input
               type="text"
+              value={searchTerm}
               placeholder="Search constitutional documents..."
               className="flex-grow bg-transparent px-4 py-2 focus:outline-none placeholder-gray-400 text-inherit"
+              onChange={<span class="fstat-no" title="function not covered" >(e) =&gt; setSearchTerm(e.target.value)}</span>
             /&gt;
-            &lt;button&gt;
+            &lt;button type="submit"&gt;
               &lt;ShinyText text="search!" disabled={false} speed={2} className='custom-class' /&gt; 
             &lt;/button&gt;
 &nbsp;
@@ -745,7 +778,7 @@ export default function LandingPage() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-24T18:26:41.450Z
+                at 2025-05-25T00:37:41.458Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
