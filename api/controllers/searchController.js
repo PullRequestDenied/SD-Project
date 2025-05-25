@@ -10,32 +10,19 @@ const { helpers } = sdk;
 const embedClient = new PredictionServiceClient({
   apiEndpoint: 'us-central1-aiplatform.googleapis.com'
 });
-
-
-// Initialize Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 const bucket = process.env.SUPABASE_BUCKET;
-
-
 // Initialize Vertex AI
 const vertexai = new VertexAI({
-  project: process.env.GOOGLE_CLOUD_PROJECT, // e.g. 'copper-moon-387900'
-  location: 'us-central1',                   // your region
+  project: process.env.GOOGLE_CLOUD_PROJECT, 
+  location: 'us-central1',                
 });
-const isValidDate = (s) => {
-  // Date.parse returns NaN for invalid strings
-  const t = Date.parse(s);
-  return typeof s === 'string' && !isNaN(t);
-};
-
 async function embedTexts(project, location, model, texts) {
   const endpoint = `projects/${project}/locations/${location}/publishers/google/models/${model}`;
-  // Use helpers.toValue from the root import!
   const instances = texts.map(t =>
-    // NOTE: use SEMANTIC_SIMILARITY instead of TEXT_EMBEDDING
     helpers.toValue({ content: t, task_type: 'SEMANTIC_SIMILARITY' })
   );
   const [response] = await embedClient.predict({ endpoint, instances });
@@ -48,12 +35,6 @@ async function embedTexts(project, location, model, texts) {
      .map(v => v.numberValue)
   );
 }
-/**
- * 
- * GET /api/search
- * Query params: term, from, to, page, perPage
- */
-// controllers/searchController.js
 exports.askQuestion = async (req, res, next) => {
   try {
     const {
@@ -196,108 +177,6 @@ return res.json({
     return next(err);
   }
 };
-exports.searchFiles = async (req, res) => {
-  try {
-    const {
-      term = '',       // only "term" now
-      from,
-      to,
-      fileType,
-      sort = 'created_at',
-      order = 'desc',  // "asc" or "desc"
-      page = '1',
-      perPage = '20',
-    } = req.query;
-
-    const pageNum    = Math.max(1, parseInt(page,   10));
-    const perPageNum = Math.min(100, parseInt(perPage,10));
-    const offset     = (pageNum - 1) * perPageNum;
-
-    // 1) Build base
-    let query = supabase
-      .from('files')
-      .select('*', { count: 'exact' });
-
-    // 2) Full‐text search on "term"
-    if (term.trim()) {
-      query = query.textSearch('document', term, {
-        config: 'english',
-        type: 'websearch',
-      });
-    }
-
-    // 3) Date filters
-    if (isValidDate(from) && isValidDate(to)) {
-      query = query.gte('created_at', from).lte('created_at', to);
-    }
-
-    // 4) File-type filter
-    if (fileType) {
-      query = query.eq('type', fileType);
-    }
-
-    // 5) Sorting & pagination
-    query = query
-      .order(sort,    { ascending: order.toLowerCase() === 'asc' })
-      .range(offset, offset + perPageNum - 1);
-
-    // 6) Execute
-    const { data, count, error } = await query;
-    if (error) throw error;
-
-    // 7) Enrich with publicUrl (skip in tests)
-    const skipEnrichment = process.env.NODE_ENV === 'test';
-    const results = data.map((row) => {
-      if (skipEnrichment) {
-        return { ...row, publicUrl: null };
-      }
-      const { data: urlData, error: urlErr } = supabase
-        .storage
-        .from(bucket)
-        .getPublicUrl(row.path);
-      if (urlErr) console.error('getPublicUrl error', urlErr);
-      return { ...row, publicUrl: urlData?.publicUrl || null };
-    });
-
-    // 8) Response
-    res.json({
-      total:   count,
-      page:    pageNum,
-      perPage: perPageNum,
-      results,
-    });
-  } catch (err) {
-    console.error('💥 searchFiles error:', err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-
-/**
- * GET /api/search/suggestions
- * Query params: term
- */
-exports.getSuggestions = async (req, res, next) => {
-  try {
-    const { term = "" } = req.query;
-    const { data, error } = await supabase
-      .from("files")
-      .select("filename")
-      .ilike("filename", `${term}%`)
-      .limit(10);
-
-    if (error) throw error;
-    res.json(data.map((row) => row.filename));
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * POST /api/search/summarize
- * Body: { docIds: [uuid], rawText: string }
- */
- 
 exports.summarizeText = async (req, res, next) => {
   try {
     const { rawText, docIds } = req.body;
