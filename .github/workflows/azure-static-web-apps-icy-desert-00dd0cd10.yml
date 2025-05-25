@@ -28,7 +28,7 @@ jobs:
       - name: Run unit tests with coverage
         working-directory: ./frontend
         run: |
-          npm install
+          npm install  --legacy-peer-deps
           npm run coverage
 
       - name: Write GCP service-account key to api/
