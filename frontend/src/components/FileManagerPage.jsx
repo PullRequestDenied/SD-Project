@@ -87,7 +87,15 @@ const onFileManagerCreated = function() {
       );
     }
   }
+  function onSuccess(args) {
+    if (args.action !== 'read'){
+    alert('Success');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1100);   
+    }
 
+  }
   const onFileOpen = (args) => {
     const folderId = args.fileDetails.folderId;
     setCurrentFolderId(folderId);
@@ -317,6 +325,7 @@ input[type="text"].pl-4, input.pl-4, select.pl-2, .button-row.pl-1 { padding-lef
         }}
         created={onFileManagerCreated}
         failure={onFailure}
+        success={onSuccess} 
         beforeSend={handleBeforeSend}
         fileOpen={onFileOpen}
         fileSelect={onFileSelect}
