@@ -4,6 +4,17 @@ import Dashboard from '../src/components/Dashboard';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 
+class NoopXHR {
+  open() {}
+  send() { this.onload?.(); }
+  setRequestHeader() {}
+  abort() {}
+  get status() { return 200; }
+  get responseText() { return ''; }
+}
+  
+
+global.XMLHttpRequest = NoopXHR;
 // ✅ Mock: react-router's useNavigate
 const mockNavigate = vi.fn();
 

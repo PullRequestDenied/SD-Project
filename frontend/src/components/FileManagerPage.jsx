@@ -39,9 +39,11 @@ export default function FileManagerPage() {
       ajaxArgs.httpRequest.setRequestHeader('X-Tags', JSON.stringify(tagsArray));
     };
   };
-  const onFileManagerCreated = () => {
-  fileObj.current.disableToolbarItems(['View']);
-  fileObj.current.disableToolbarItems(['Details']);
+const onFileManagerCreated = args => {
+  const fm = args?.fileManagerInstance;
+  if (!fm) return;                   // ← bail out in test env
+  fm.disableToolbarItems(['View']);
+  fm.disableToolbarItems(['Details']);
 };
 
   const beforeDownload = async (args) => {
