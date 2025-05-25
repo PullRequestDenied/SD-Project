@@ -40,22 +40,22 @@ describe('AccountInfoComponent', () => {
     expect(screen.getByPlaceholderText(/testuser/i)).toBeInTheDocument();
   });
 
-  it('applies light mode styling', () => {
-    const { container } = render(<AccountInfoComponent />);
+it('applies light mode styling', () => {
+  const { container } = render(<AccountInfoComponent />);
+  const mainArticle = container.querySelector('article');
+  expect(mainArticle).toHaveClass('bg-white');
+});
 
-    const mainDiv = container.querySelector('div');
-    expect(mainDiv).toHaveClass('bg-white');
-  });
 
   it('applies dark mode styling', async () => {
-    vi.doMock('../src/context/DarkModeContext', () => ({
-      useDarkMode: () => ({ darkMode: true }),
-    }));
-    const { default: AccountInfoComponentDark } = await import('../src/components/AccountInfoComponent');
-    const { container } = render(<AccountInfoComponentDark />);
-    const mainDiv = container.querySelector('div');
-    expect(mainDiv).toHaveClass('bg-gray-800');
-  });
+  vi.doMock('../src/context/DarkModeContext', () => ({
+    useDarkMode: () => ({ darkMode: true }),
+  }));
+  const { default: AccountInfoComponentDark } = await import('../src/components/AccountInfoComponent');
+  const { container } = render(<AccountInfoComponentDark />);
+  const mainArticle = container.querySelector('article');
+  expect(mainArticle).toHaveClass('bg-gray-800');
+});
 
   it('calls updateUsernameAndEmail with current username and email when both are filled', async () => {
         render(<AccountInfoComponent />);
