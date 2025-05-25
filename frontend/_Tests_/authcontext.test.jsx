@@ -131,7 +131,7 @@ describe('AuthContext', () => {
     await waitFor(() =>
       expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
         'a@test.com',
-        { redirectTo: 'http://localhost:5173/resetpassword' }
+        { redirectTo: 'https://icy-desert-00dd0cd10.6.azurestaticapps.net/resetpassword' }
       )
     );
   });
