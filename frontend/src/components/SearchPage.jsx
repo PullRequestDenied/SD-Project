@@ -174,6 +174,7 @@ export default function SearchPageLayout({ token }) {
       }}
     >
       <CardContent>
+        <Typography variant="h6">{doc.filename}</Typography>
         <Typography
           variant="body2"
           sx={{
