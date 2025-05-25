@@ -135,6 +135,9 @@ const onFileManagerCreated = function() {
       }
       alert('Success');
       setInfoMode('none');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1100);
     } catch (err) {
       console.error('Metadata save failed:', err);
       alert('Internal server error');
