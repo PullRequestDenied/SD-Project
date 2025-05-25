@@ -18,9 +18,9 @@ import {
   MenuItem,
   CircularProgress,
 } from "@mui/material";
-import { ArrowLeft } from 'lucide-react';
 import MenuIcon from "@mui/icons-material/Menu";
 import SortIcon from "@mui/icons-material/Sort";
+import InputAdornment from "@mui/material/InputAdornment";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -28,9 +28,6 @@ import Particles from "../assets/Particals";
 import { useDarkMode } from "../context/DarkModeContext";
 import BlurText from "../assets/BlurText";
 import ShinyText from "../assets/ShinyText";
-import { Link } from "react-router-dom";
-import { de } from "date-fns/locale";
-import { search } from "../../../api/server";
 
 export default function SearchPageLayout({ token }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -329,17 +326,6 @@ export default function SearchPageLayout({ token }) {
           darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
         }`}
       >
-
-        <Link to="/"
-            className="absolute top-6 left-6 group flex items-center space-x-1"
-        >
-        <ArrowLeft className="w-5 h-5 text-indigo-500 group-hover:text-indigo-600 transition" />
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-sm text-indigo-500">
-                Back to Home
-            </span>
-        </Link>
-
-
         <section className="absolute inset-0 z-0">
           <Particles
             particleColors={["#ffffff", "#000000"]}
@@ -362,15 +348,7 @@ export default function SearchPageLayout({ token }) {
               direction="top"
               className="text-4xl mb-8"
             />
-            <div className="flex flex-col md:flex-row items-center gap-3">
-              <Button
-                variant="contained"
-                size="large"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <MenuIcon /> Filters
-              </Button>
-
+            <div className="flex flex-col md:flex-row items-center gap-3 w-full">
               <TextField
                 variant="outlined"
                 fullWidth
@@ -385,9 +363,10 @@ export default function SearchPageLayout({ token }) {
                     backgroundColor: darkMode ? "#1e1e1e" : "#f9f9f9",
                     border: "1px solid",
                     borderColor: darkMode ? "#444" : "#ccc",
-                    paddingX: 2,
-                    paddingY: 1,
+                    paddingLeft: "0.5rem",
+                    paddingRight: "0.5rem",
                     transition: "all 0.3s ease",
+                    height: "3.5rem",
                     "&:hover": {
                       borderColor: darkMode ? "#888" : "#888",
                     },
@@ -399,7 +378,6 @@ export default function SearchPageLayout({ token }) {
                     },
                     "& input": {
                       color: darkMode ? "#fff" : "#000",
-                      padding: "10px 0",
                     },
                     "& input::placeholder": {
                       color: darkMode ? "#aaa" : "#888",
@@ -407,21 +385,58 @@ export default function SearchPageLayout({ token }) {
                     },
                   },
                 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Button
+                        onClick={() => setSidebarOpen(true)}
+                        size="small"
+                        sx={{
+                          minWidth: "unset",
+                          color: darkMode ? "#fff" : "#000",
+                          textTransform: "none",
+                          padding: "4px 8px",
+                          borderRadius: "0.5rem",
+                          backgroundColor: darkMode ? "#2a2a2a" : "#e2e2e2",
+                          "&:hover": {
+                            backgroundColor: darkMode ? "#3a3a3a" : "#d0d0d0",
+                          },
+                          marginRight: 1,
+                        }}
+                      >
+                        <MenuIcon fontSize="small" />
+                      </Button>
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Button
+                        onClick={handleSearch}
+                        size="small"
+                        sx={{
+                          minWidth: "unset",
+                          padding: "6px 12px",
+                          borderRadius: "0.5rem",
+                          backgroundColor: darkMode ? "#101828" : "#101828",
+                          color: "#fff",
+                          textTransform: "none",
+                          fontWeight: "500",
+                          "&:hover": {
+                            backgroundColor: darkMode ? "#1e2939" : "#1e2939",
+                          },
+                        }}
+                      >
+                        <ShinyText
+                          text="Search"
+                          disabled={false}
+                          speed={2}
+                          className="text-sm"
+                        />
+                      </Button>
+                    </InputAdornment>
+                  ),
+                }}
               />
-              <button
-                type="button"
-                onClick={handleSearch}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  darkMode ? "bg-gray-900 text-white" : "bg-gray-200 text-black"
-                }`}
-              >
-                <ShinyText
-                  text="search!"
-                  disabled={false}
-                  speed={2}
-                  className="custom-class"
-                />
-              </button>
             </div>
           </article>
 
@@ -456,5 +471,3 @@ export default function SearchPageLayout({ token }) {
     </LocalizationProvider>
   );
 }
-
-
