@@ -174,11 +174,18 @@ export default function SearchPageLayout({ token }) {
       }}
     >
       <CardContent>
-        <Typography variant="h6">{doc.filename}</Typography>
-        <Typography variant="body2" color="textSecondary">
-          {new Date(doc.created_at).toLocaleString()}
+        <Typography
+          variant="body2"
+          sx={{
+            color: darkMode ? "#fff" : "#000",
+          }}
+        >
+          {new Date(doc.created_at).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
         </Typography>
-        <Typography variant="caption">{doc.type}</Typography>
       </CardContent>
       <CardActions>
         <Button
@@ -454,9 +461,9 @@ export default function SearchPageLayout({ token }) {
               </Box>
             )
           )} */}
-          </section>
+        </section>
 
-          <section className="relative z-10 px-4 py-10">
+        <section className="relative z-10 px-4 py-10">
           <Box className="max-w-6xl mx-auto">
             {currentSummary.loading ? (
               <Box display="flex" justifyContent="center" mt={4}>
@@ -471,7 +478,10 @@ export default function SearchPageLayout({ token }) {
                 }}
               >
                 <CardContent>
-                  <ShinyText text="Answer" className="text-2xl font-semibold mb-2" />
+                  <ShinyText
+                    text="Answer"
+                    className="text-2xl font-semibold mb-2"
+                  />
                   <Typography variant="body1">{currentSummary.text}</Typography>
                 </CardContent>
               </Card>
