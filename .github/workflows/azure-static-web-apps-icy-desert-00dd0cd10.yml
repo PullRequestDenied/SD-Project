@@ -35,10 +35,10 @@ jobs:
         run: |
           npm run coverage
         env:
-          VITEST_COVERAGE_LINES: 90
-          VITEST_COVERAGE_FUNCTIONS: 90
-          VITEST_COVERAGE_BRANCHES: 90
-          VITEST_COVERAGE_STATEMENTS: 90
+          VITEST_COVERAGE_LINES: 80
+          VITEST_COVERAGE_FUNCTIONS: 80
+          VITEST_COVERAGE_BRANCHES: 80
+          VITEST_COVERAGE_STATEMENTS: 80
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 

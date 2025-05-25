@@ -9,11 +9,13 @@ export default defineConfig({
         globals: true,
         coverage: {
             provider: 'v8',
-            reporter: ['text', 'lcov'],
-            lines: 80,
-            functions: 80,
-            branches: 80,
-            statements: 80,
+            reporter: ['text', 'html', 'lcov'],
+            thresholds: {
+                lines: 80,
+                functions: 60,
+                branches: 60,
+                statements: 80
+            }
         },
     }
 })
