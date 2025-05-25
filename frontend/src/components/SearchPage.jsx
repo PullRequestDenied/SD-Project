@@ -269,9 +269,9 @@ export default function SearchPageLayout({ token }) {
           sx={{ color: darkMode ? "#fff" : "#000" }}
         >
           <MenuItem value="">All</MenuItem>
-          <MenuItem value="pdf">PDF</MenuItem>
-          <MenuItem value="docx">DOCX</MenuItem>
-          <MenuItem value="txt">TXT</MenuItem>
+            <MenuItem value="application/pdf">PDF</MenuItem>
+            <MenuItem value="image/png">PNG</MenuItem>
+            <MenuItem value="text/plain">Text</MenuItem>
         </Select>
       </FormControl>
 
