@@ -118,27 +118,23 @@ describe('IdentitiesComponent', () => {
   });
 
   it('applies dark mode styling when dark mode is enabled', async () => {
-    // Mock dark mode to be true
-    vi.doMock('../src/context/DarkModeContext', () => ({
-            useDarkMode: () => ({ darkMode: true }),
-    }));
+  vi.doMock('../src/context/DarkModeContext', () => ({
+    useDarkMode: () => ({ darkMode: true }),
+  }));
 
-    const { default: IdentitiesComponent } = await import('../src/components/IdentitiesComponent');
-    const { container } = render(<IdentitiesComponent />);
-    
-    // Check for dark mode classes
-    const mainDiv = container.querySelector('div');
-    expect(mainDiv).toHaveClass('bg-gray-800');
-    expect(mainDiv).toHaveClass('border-gray-700');
-  });
+  const { default: IdentitiesComponent } = await import('../src/components/IdentitiesComponent');
+  const { container } = render(<IdentitiesComponent />);
+  const mainArticle = container.querySelector('article');
+  expect(mainArticle).toHaveClass('bg-gray-800');
+  expect(mainArticle).toHaveClass('border-gray-700');
+});
+
 
   it('applies light mode styling when dark mode is disabled', () => {
-    // Mock dark mode to be false (already set in beforeEach)
-    const { container } = render(<IdentitiesComponent />);
-    
-    // Check for light mode classes
-    const mainDiv = container.querySelector('div');
-    expect(mainDiv).toHaveClass('bg-white');
-    expect(mainDiv).toHaveClass('border-gray-200');
-  });
+  const { container } = render(<IdentitiesComponent />);
+  const mainArticle = container.querySelector('article');
+  expect(mainArticle).toHaveClass('bg-white');
+  expect(mainArticle).toHaveClass('border-gray-200');
+});
+
 });

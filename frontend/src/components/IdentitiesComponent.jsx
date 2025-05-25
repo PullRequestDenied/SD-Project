@@ -10,10 +10,7 @@ const IdentitiesComponent = () => {
      const [identities, setIdentities] = React.useState([]);
      const [hasIdentity, setHasIdentity] = React.useState(false);
 
-    
-    
     React.useEffect(() => {
-        
         const ident = getIdentities();
         setIdentities(ident);
 
@@ -30,20 +27,18 @@ const IdentitiesComponent = () => {
 
   return (
     <section className='justify-center transition-colors mt-6'>
-        <div className={`w-xl px-6 py-12 rounded-md transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
+        <article className={`w-xl px-6 py-12 rounded-md transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
                   darkMode
                   ? 'bg-gray-800 border-gray-700 '
                   : 'bg-white border-gray-200 '
                 }`}>
             <h2 className="text-2xl font-bold mb-6 text-center">Linked Accounts</h2>
-            <div className="space-y-4">
+            <section className="space-y-4">
                 {identities.map((identity) => (
                 <IdentityCardComponent key= {identity.id} identity={identity} />
                 ))}
-            </div>
-            
-        </div>
-
+            </section>
+        </article>
     </section>
   )
 }

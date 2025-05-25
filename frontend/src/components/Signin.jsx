@@ -88,7 +88,7 @@ const Signin = () => {
             )}
 
             {resetPassword && (
-              <div>
+              <section>
                 <p className="text-sm text-center mb-4">
                 Forgot your password?
                 <Link
@@ -102,7 +102,7 @@ const Signin = () => {
                   {" Reset Password"}
                 </Link>
               </p>
-              </div>
+              </section>
             )}
     
             <form onSubmit={handleSignIn} className="space-y-4">

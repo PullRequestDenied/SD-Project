@@ -30,9 +30,9 @@ export default function AdminUserCard({ name, email, isAdmin, onToggle, onReject
         <h2 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</h2>
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{email}</p>
         {isAdmin && (
-          <span className="inline-block mt-1 text-xs font-medium text-green-600 bg-green-200 px-2 py-0.5 rounded">
+          <mark className="inline-block mt-1 text-xs font-medium text-green-600 bg-green-200 px-2 py-0.5 rounded">
             Admin
-          </span>
+          </mark>
         )}
       </header>
 
@@ -75,7 +75,7 @@ export default function AdminUserCard({ name, email, isAdmin, onToggle, onReject
           aria-labelledby="motivation-heading"
           className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-black/10"
         >
-          <div
+          <main
             className={`w-full max-w-2xl p-8 rounded-2xl shadow-2xl ${
               darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
             }`}
@@ -86,15 +86,15 @@ export default function AdminUserCard({ name, email, isAdmin, onToggle, onReject
             <p className="text-lg md:text-xl whitespace-pre-wrap leading-relaxed">
               {motivation || 'No motivation provided.'}
             </p>
-            <div className="mt-6 text-right">
+            <nav className="mt-6 text-right">
               <button
                 onClick={() => setShowMotivation(false)}
                 className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-base rounded-md"
               >
                 Close
               </button>
-            </div>
-          </div>
+            </nav>
+          </main>
         </section>
       )}
     </article>

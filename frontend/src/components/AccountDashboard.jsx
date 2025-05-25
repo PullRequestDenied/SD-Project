@@ -17,9 +17,9 @@ const AccountDashboard = () => {
             className="absolute top-6 left-6 group flex items-center space-x-1"
         >
           <ArrowLeft className="w-5 h-5 text-indigo-500 group-hover:text-indigo-600 transition" />
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-sm text-indigo-500">
+          <p className="opacity-0 group-hover:opacity-100 transition-opacity text-sm text-indigo-500">
               Back to Home
-          </span>
+          </p>
         </Link>
 
 
@@ -51,12 +51,3 @@ const AccountDashboard = () => {
 };
 
 export default AccountDashboard;
-
-
-
-
-
-
-
-
-

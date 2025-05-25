@@ -61,14 +61,14 @@ const ContactForm = () => {
         darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
       }`}
     >
-        <Link to="/"
-            className="absolute top-6 left-6 group flex items-center space-x-1"
-        >
+      <Link to="/"
+        className="absolute top-6 left-6 group flex items-center space-x-1"
+      >
         <ArrowLeft className="w-5 h-5 text-indigo-500 group-hover:text-indigo-600 transition" />
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-sm text-indigo-500">
-                Back to Home
-            </span>
-        </Link>
+        <p className="opacity-0 group-hover:opacity-100 transition-opacity text-sm text-indigo-500">
+          Back to Home
+        </p>
+      </Link>
 
       <section
         className={`relative z-10 w-full max-w-md px-6 py-12 shadow-lg rounded-2xl transition-all duration-300 ease-in-out border border-transparent hover:border-indigo-400 ${
@@ -80,7 +80,7 @@ const ContactForm = () => {
         <h2 className="text-2xl font-bold mb-6 text-center">Contact Us</h2>
 
         <form ref={form} onSubmit={sendEmail} noValidate className="space-y-4">
-          <div>
+          <article>
             <input
               type="text"
               name="user_name"
@@ -94,9 +94,9 @@ const ContactForm = () => {
             {errors.user_name && (
               <p className="text-sm text-red-500 mt-1">{errors.user_name}</p>
             )}
-          </div>
+          </article>
 
-          <div>
+          <article>
             <input
               type="email"
               name="user_email"
@@ -110,9 +110,9 @@ const ContactForm = () => {
             {errors.user_email && (
               <p className="text-sm text-red-500 mt-1">{errors.user_email}</p>
             )}
-          </div>
+          </article>
 
-          <div>
+          <article>
             <textarea
               name="message"
               placeholder="Your Message"
@@ -126,7 +126,7 @@ const ContactForm = () => {
             {errors.message && (
               <p className="text-sm text-red-500 mt-1">{errors.message}</p>
             )}
-          </div>
+          </article>
 
           <button
             type="submit"

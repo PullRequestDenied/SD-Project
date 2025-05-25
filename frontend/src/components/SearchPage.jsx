@@ -356,7 +356,7 @@ export default function SearchPageLayout({ token }) {
               direction="top"
               className="text-4xl mb-8"
             />
-            <div className="flex flex-col md:flex-row items-center gap-3 w-full">
+            <section className="flex flex-col md:flex-row items-center gap-3 w-full">
               <TextField
                 variant="outlined"
                 fullWidth
@@ -445,7 +445,7 @@ export default function SearchPageLayout({ token }) {
                   ),
                 }}
               />
-            </div>
+            </section>
           </article>
 
           {/* {currentSummary.loading ? (
