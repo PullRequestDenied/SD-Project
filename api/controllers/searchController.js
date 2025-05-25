@@ -118,6 +118,7 @@ const context = docs
         tags = d.metadata.split(',').map(t => t.trim()).filter(Boolean);
       }
     }
+    console.log("tags",tags);
     // Build the line safely
     return `• ${d.filename} (tags: ${tags.join(', ')})`;
   })
@@ -195,30 +196,30 @@ exports.summarizeText = async (req, res, next) => {
         .in('id', docIds);
 
       if (error) throw error;
-console.log('data:', data);
-      // metadata is assumed to be an array of strings
-const keywords = data.flatMap(row => {
-  // join all the chunks into one JSON string…
-  const jsonString = row.metadata.join('');
-  try {
-    // …then parse it back into a real array
-    return JSON.parse(jsonString);
-  } catch {
-    // fallback: if parsing fails, just return the raw strings
-    return row.metadata;
-  }
-});
+      console.log('data:', data);
 
+      // normalize metadata whether it's a string or already an array
+      keywords = data.flatMap(row => {
+        if (typeof row.metadata === 'string') {
+          // split comma-separated string into trimmed tags
+          return row.metadata.split(',').map(tag => tag.trim());
+        } else if (Array.isArray(row.metadata)) {
+          // already an array of tags
+          return row.metadata;
+        } else {
+          // unexpected type → skip
+          return [];
+        }
+      });
 
+      console.log('keywords:', keywords);
       if (keywords.length === 0) {
         return res
           .status(400)
           .json({ error: 'No metadata tags found for those docIds.' });
       }
 
-      prompt = `Summarize these topics do not include them with quotes in your answer and type
-      as if you describing and image or document containing these topics,do not include what you 
-      are doing in your answer,make it a forma,do not reference it as an image,rather say,"the selected file": ${keywords.join(', ')}`;
+      prompt = `Summarize these topics (do not quote them) as if you are describing a document containing: ${keywords.join(', ')}. Refer to it as "the selected file" in your summary.`;
     } 
     // 3) Neither rawText nor docIds → error
     else {
@@ -226,7 +227,6 @@ const keywords = data.flatMap(row => {
         .status(400)
         .json({ error: 'No input text or docIds provided.' });
     }
-
 
     // 4) Instantiate your Vertex AI generative model
     const model = vertexai.getGenerativeModel({
@@ -249,11 +249,11 @@ const keywords = data.flatMap(row => {
       JSON.stringify(gcResult, null, 2)
     );
 
-    // 6) Extract the summary from whichever field is populated
+    // 6) Extract the summary
     let summary = '';
     const candidate = gcResult.response?.candidates?.[0];
     if (candidate?.content?.parts) {
-      summary = candidate.content.parts.map((p) => p.text).join('');
+      summary = candidate.content.parts.map(p => p.text).join('');
     } else if (typeof gcResult.response?.text === 'string') {
       summary = gcResult.response.text;
     }
@@ -264,6 +264,7 @@ const keywords = data.flatMap(row => {
     next(err);
   }
 };
+
 exports.download = async (req, res,data) => {
   try {
 

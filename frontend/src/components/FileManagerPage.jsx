@@ -20,6 +20,7 @@ export default function FileManagerPage() {
   const [infoMode, setInfoMode] = useState('view'); // 'none' | 'view'
   const [fileInfo, setFileInfo] = useState({ name: '', metadata: '', size: '' });
   const fileObj = React.useRef(null);
+  
   const { session } = UserAuth();
   const { darkMode } = useDarkMode();
 
@@ -38,6 +39,10 @@ export default function FileManagerPage() {
       ajaxArgs.httpRequest.setRequestHeader('X-Tags', JSON.stringify(tagsArray));
     };
   };
+  const onFileManagerCreated = () => {
+  fileObj.current.disableToolbarItems(['View']);
+  fileObj.current.disableToolbarItems(['Details']);
+};
 
   const beforeDownload = async (args) => {
     // 1) cancel default form POST
@@ -79,7 +84,7 @@ export default function FileManagerPage() {
       alert(
         'File upload failed: ' +
           (args.error?.message ||
-            'Please select a valid folder to upload in,files should not be uploaded to root')
+            'Please select a valid folder to upload in,files should not be uploaded to root,if you are not in root,please refresh the page.')
       );
     }
   }
@@ -301,12 +306,14 @@ input[type="text"].pl-4, input.pl-4, select.pl-2, .button-row.pl-1 { padding-lef
         style={{ backgroundColor: darkMode ? '#1f2937' : 'white' }}
         id="file-manager"
         height="375px"
+        
         // only the ‘read’ URL is required for navigation
         ajaxSettings={{
           url: `${hostUrl}/api/filemanager/file-operations`,
           uploadUrl: `${hostUrl}/api/filemanager/upload`,
           downloadUrl: `${hostUrl}/api/filemanager/file-operations`,
         }}
+        created={onFileManagerCreated}
         failure={onFailure}
         beforeSend={handleBeforeSend}
         fileOpen={onFileOpen}
