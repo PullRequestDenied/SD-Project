@@ -116,6 +116,7 @@ export default function SearchPageLayout({ token }) {
 
   const handleSummarize = async (docId) => {
     setSummaryText({ docId, text: "", loading: true });
+    console.log(docId);
     try {
       const res = await fetch(`${hostUrl}/api/search/summarize`, {
         method: "POST",
@@ -129,6 +130,7 @@ export default function SearchPageLayout({ token }) {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
       const { summary } = await res.json();
+      console.log(summary);
       setSummaryText({ docId, text: summary, loading: false });
     } catch (e) {
       console.error("Summarize failed", e);
