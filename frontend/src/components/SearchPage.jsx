@@ -418,7 +418,7 @@ export default function SearchPageLayout({ token }) {
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <Button
+                      <Button id="searchBtn"
                         onClick={handleSearch}
                         size="small"
                         sx={{
