@@ -25,14 +25,10 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Run unit tests with coverage
+      - name: Install Dependancies
         working-directory: ./frontend
         run: |
           npm install  --legacy-peer-deps
-          npm run coverage
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Enforce coverage threshold
         working-directory: ./frontend
@@ -43,6 +39,8 @@ jobs:
           VITEST_COVERAGE_FUNCTIONS: 80
           VITEST_COVERAGE_BRANCHES: 80
           VITEST_COVERAGE_STATEMENTS: 80
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Write GCP service-account key to api/
         run: |
