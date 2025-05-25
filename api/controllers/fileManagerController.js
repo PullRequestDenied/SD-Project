@@ -39,6 +39,7 @@ async function embedTexts(project, location, model, texts) {
      .map(v => v.numberValue)
   );
 }
+exports.embedTexts = embedTexts;
 async function getFolder(folderId) {
   return supabase
     .from("folders")
@@ -47,6 +48,7 @@ async function getFolder(folderId) {
     .single()
     .then(r => r.data)
 }
+exports.getFolder = getFolder;
 async function buildFolderPath(folderId) {
   let segments = []
   let current = await getFolder(folderId)
@@ -57,12 +59,14 @@ async function buildFolderPath(folderId) {
   }
   return segments.join("/")          // → "" for root, or "foo/bar"
 }
+exports.buildFolderPath = buildFolderPath;
 async function getDescendantFolderIds(folderId) {
   // assumes you have an RPC or recursive query
   return supabase
     .rpc("get_folder_descendants", { start_id: folderId })
     .then(r => r.data.map(f => f.id))
 }
+exports.getDescendantFolderIds = getDescendantFolderIds;
 async function getDescendantFolders(folderId) {
   const { data, error } = await supabase
     .rpc('get_folder_descendants', { start_id: folderId });
@@ -74,6 +78,7 @@ async function getDescendantFolders(folderId) {
 
   return data; // [{ id, name, parent_id }, …]
 }
+exports.getDescendantFolders = getDescendantFolders;
 async function getFilesInFolders(folderIds) {
   return supabase
     .from("files")
@@ -81,18 +86,21 @@ async function getFilesInFolders(folderIds) {
     .in("folder_id", folderIds)
     .then(r => r.data)
 }
+exports.getFilesInFolders = getFilesInFolders;
 async function updateFolderParent(folderId, newParentId) {
   return supabase
     .from("folders")
     .update({ parent_id: newParentId || null })
     .eq("id", folderId)
 }
+exports.updateFolderParent = updateFolderParent;
 async function updateFilePath(fileId, newPath) {
   return supabase
     .from("files")
     .update({ path: newPath })
     .eq("id", fileId)
 }
+exports.updateFilePath = updateFilePath;
 async function moveStorageObject(oldPath, newPath) {
   // (a) download
   let { data: blob } = await supabase.storage.from(bucket).download(oldPath)
@@ -102,6 +110,7 @@ async function moveStorageObject(oldPath, newPath) {
   // (c) delete old
   await supabase.storage.from(bucket).remove([oldPath])
 }
+exports.moveStorageObject = moveStorageObject;
 async function updateFileRecord(fileId, { folder_id, path, filename }) {
   const { error } = await supabase
     .from("files")
@@ -109,6 +118,7 @@ async function updateFileRecord(fileId, { folder_id, path, filename }) {
     .eq("id", fileId);
   if (error) throw error;
 }
+exports.updateFileRecord = updateFileRecord;
 async function copyStorageObject(sourcePath, targetPath) {
   // 1) download
   const { data, error: dlErr } = await supabase
@@ -124,6 +134,7 @@ async function copyStorageObject(sourcePath, targetPath) {
 
   // NO delete step!
 }
+exports.copyStorageObject = copyStorageObject;
 async function createFolderRecord({ name, parent_id, created_by = null }) {
   const { data, error } = await supabase
     .from("folders")
@@ -133,12 +144,7 @@ async function createFolderRecord({ name, parent_id, created_by = null }) {
   if (error) throw error;
   return data;
 }
-async function insertFileRecord({ folder_id, path, filename, metadata = {} }) {
-  const { error } = await supabase
-    .from("files")
-    .insert([{ folder_id, path, filename, ...metadata }]);
-  if (error) throw error;
-}
+exports.createFolderRecord = createFolderRecord;
 async function updateFolderName(folderId, name) {
   const { error } = await supabase
     .from("folders")
@@ -146,6 +152,7 @@ async function updateFolderName(folderId, name) {
     .eq("id", folderId);
   if (error) throw error;
 }
+exports.updateFolderName = updateFolderName;
 async function mapPathToFolderId(pathStr) {
   const clean = (pathStr || '').replace(/^\/+|\/+$/g, '');  
   const segments = clean ? clean.split('/') : [];
@@ -170,6 +177,7 @@ async function mapPathToFolderId(pathStr) {
 
   return parentId;
 }
+exports.mapPathToFolderId = mapPathToFolderId
 /*Helper functions*/
 exports.fileOperations = async (req, res) => {
   
@@ -284,13 +292,14 @@ exports.uploadFile = async (req, res) => {
     const folderId = selectedFolderId || null;
     const uploadedBy = userId || null;
     const metadataRaw = req.get('X-Tags') || "";
+    if (!file) {
+      return res.status(400).json({ error: "No file provided." });
+    }
     const folderPath = await buildFolderPath(folderId);
     console.log(selectedFolderId);
     console.log(folderPath);
  
-    if (!file) {
-      return res.status(400).json({ error: "No file provided." });
-    }
+ 
 
     const fullPath = folderPath
       ? `${BUCKET_ROOT}/${folderPath}/${file.originalname}`
@@ -914,7 +923,7 @@ exports.rename = async (req, res,name,data) => {
       ? `${parentPath}/${folder.name}`
       : folder.name;
     const newRel = parentPath
-      ? `${parentPath}/${newName}`
+      ? `${parentPath}/${newFileName}`
       : newFileName;
 
     const oldPrefix = `${BUCKET_ROOT}/${oldRel}`;
