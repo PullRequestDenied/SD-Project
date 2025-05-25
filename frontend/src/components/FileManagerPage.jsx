@@ -25,7 +25,7 @@ export default function FileManagerPage() {
   const { darkMode } = useDarkMode();
 
   const token   = session?.access_token || '';
-  const hostUrl = 'https://api-sd-project-fea6akbyhygsh0hk.southafricanorth-01.azurewebsites.net';
+  const hostUrl = 'http://localhost:5000';
 
   const handleBeforeSend = (args) => {
     args.ajaxSettings.beforeSend = (ajaxArgs) => {
@@ -39,13 +39,10 @@ export default function FileManagerPage() {
       ajaxArgs.httpRequest.setRequestHeader('X-Tags', JSON.stringify(tagsArray));
     };
   };
-const onFileManagerCreated = args => {
-  const fm = args?.fileManagerInstance;
-  if (!fm) return;                   // ← bail out in test env
-  fm.disableToolbarItems(['View']);
-  fm.disableToolbarItems(['Details']);
+const onFileManagerCreated = function() {
+  this.disableToolbarItems(['View']);
+  this.disableToolbarItems(['Details'])
 };
-
   const beforeDownload = async (args) => {
     // 1) cancel default form POST
     args.cancel = true;
